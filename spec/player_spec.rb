@@ -24,6 +24,10 @@ RSpec.describe Player do
 
   describe "#move" do
     describe "prints a prompt" do
+      before do
+        allow(player).to receive(:gets).and_return("Bf3")
+      end
+
       context "when the player is controlling white" do
         it 'prints "White\'s move: "' do
           expect { player.move }.to output(/White's move: /).to_stdout
