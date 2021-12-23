@@ -95,15 +95,6 @@ RSpec.describe Piece do
 
           board[3][3] = white_pawn
           board[1][3] = nil
-
-          chessboard = class_double("Chessboard")
-            .as_stubbed_const(:transfer_nested_constants => true)
-
-          allow(chessboard).to receive(:notation_to_indices).with('d4')
-            .and_return([3, 3])
-
-          allow(chessboard).to receive(:notation_to_indices).with('a4')
-            .and_return([3, 0])
         end
 
         it 'returns true' do
@@ -264,15 +255,6 @@ RSpec.describe Pawn do
 
             board[4][3] = black_pawn
             board[6][3] = nil
-
-            chessboard = class_double("Chessboard")
-              .as_stubbed_const(:transfer_nested_constants => true)
-
-            allow(chessboard).to receive(:notation_to_indices).with('d5')
-              .and_return([4, 3])
-
-            allow(chessboard).to receive(:notation_to_indices).with('a5')
-              .and_return([4, 0])
           end
 
           it 'shows the capture opportunity on the move following' do
@@ -295,15 +277,6 @@ RSpec.describe Pawn do
 
             board[4][5] = black_pawn
             board[6][5] = nil
-
-            chessboard = class_double("Chessboard")
-              .as_stubbed_const(:transfer_nested_constants => true)
-
-            allow(chessboard).to receive(:notation_to_indices).with('f5')
-              .and_return([4, 5])
-
-            allow(chessboard).to receive(:notation_to_indices).with('a5')
-              .and_return([4, 0])
           end
 
           it 'shows the capture opportunity on the move following' do
@@ -499,15 +472,6 @@ RSpec.describe Pawn do
 
             board[3][3] = white_pawn
             board[1][3] = nil
-
-            chessboard = class_double("Chessboard")
-              .as_stubbed_const(:transfer_nested_constants => true)
-
-            allow(chessboard).to receive(:notation_to_indices).with('d4')
-              .and_return([3, 3])
-
-            allow(chessboard).to receive(:notation_to_indices).with('a4')
-              .and_return([3, 0])
           end
 
           it 'shows the capture opportunity on the move following' do
@@ -530,15 +494,6 @@ RSpec.describe Pawn do
 
             board[3][5] = white_pawn
             board[1][5] = nil
-
-            chessboard = class_double("Chessboard")
-              .as_stubbed_const(:transfer_nested_constants => true)
-
-            allow(chessboard).to receive(:notation_to_indices).with('f4')
-              .and_return([3, 5])
-
-            allow(chessboard).to receive(:notation_to_indices).with('a4')
-              .and_return([3, 0])
           end
 
           it 'shows the capture opportunity on the move following' do

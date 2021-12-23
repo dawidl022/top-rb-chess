@@ -1,3 +1,4 @@
+require_relative 'chessboard'
 require 'set'
 
 class Piece
