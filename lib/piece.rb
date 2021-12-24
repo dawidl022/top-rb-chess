@@ -26,9 +26,9 @@ class Piece
     nil
   end
 
-  # TODO
-  # def to_s
-  # end
+  def to_s
+    "#{symbol}#{Chessboard.indices_to_notation(*position)}"
+  end
 
   protected
 

@@ -109,8 +109,21 @@ RSpec.describe Piece do
   end
 
   describe "#to_s" do
+    let(:board) { empty_board }
     describe "returns the unicode char along with chess notation position" do
-      pending 'indices to chess notation conversion not yet implemented'
+      it 'for a white knight on c4' do
+        knight = Knight.new(:white, board)
+        board[3][2] = knight
+
+        expect(knight.to_s).to eq('♘c4')
+      end
+
+      it 'for a black rook on a7' do
+        rook = Rook.new(:black, board, [7, 7])
+        board[6][0] = rook
+
+        expect(rook.to_s).to eq('♜a7')
+      end
     end
   end
 end
