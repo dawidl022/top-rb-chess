@@ -30,7 +30,7 @@ class Piece
   # def to_s
   # end
 
-  private
+  protected
 
   def first_move?
     @first_move &&= position == @starting_square
@@ -160,6 +160,9 @@ class Rook < Piece
     # TODO include check each move to see if check exists, if so filter it out
     @rank, @file = position
 
+    # castling logic
+    first_move? # update when making a move that can possibly return to start
+
     straight_moves
   end
 end
@@ -190,5 +193,49 @@ class King < Piece
   end
 
   def valid_moves
+    @rank, @file = position
+    moves = Set[]
+
+    [-1, 0, 1].each do |rank_diff|
+      rank = @rank + rank_diff
+      next if rank < 0 || rank > 7
+
+      [-1, 0, 1].each do |file_diff|
+        next if rank_diff == 0 && file_diff == 0
+
+        file = @file + file_diff
+        next if file < 0 || rank > 7
+
+        if !@board[rank][file] || @board[rank][file].colour != @colour
+          moves.add([rank, file])
+        end
+      end
+    end
+
+    moves.merge(castling_moves) if first_move?
+
+    moves
+  end
+
+  private
+
+  def castling_moves
+    moves = Set[]
+
+    # TODO the board should check if a castling square is under check
+    moves.add([@rank, 6]) if castle_kingside?
+    moves.add([@rank, 2]) if castle_queenside?
+
+    moves
+  end
+
+  def castle_kingside?
+    !@board[@rank][5] && !@board[@rank][6] && @board[@rank][7].is_a?(Rook) \
+    && @board[@rank][7].first_move?
+  end
+
+  def castle_queenside?
+    !@board[@rank][3] && !@board[@rank][2] && !@board[@rank][1] \
+    && @board[@rank][0].is_a?(Rook) && @board[@rank][0].first_move?
   end
 end

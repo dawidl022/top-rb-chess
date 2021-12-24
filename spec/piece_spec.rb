@@ -1008,3 +1008,539 @@ RSpec.describe Knight do
     end
   end
 end
+
+RSpec.describe King do
+  include Util
+
+  describe "#valid_moves" do
+    context 'on a starting board' do
+      let(:kings_moves) do
+        [
+          starting_board[0][4], starting_board[7][4]
+        ].map { |king| king.valid_moves }
+      end
+
+      it 'no king has any moves' do
+        expect(kings_moves).to all(eq(Set[]))
+      end
+    end
+
+    context 'on a board with just a king on it' do
+      let(:board) { empty_board }
+      context 'when the king is white' do
+        subject(:king) { King.new(:white, board, [0, 4]) }
+
+        context 'when the king is in the corner' do
+          before do
+            board[0][0] = king
+          end
+
+          it 'has three moves' do
+            expect(king.valid_moves).to eq(Set[[1, 0], [1, 1], [0, 1]])
+          end
+        end
+
+        context 'when the king is on the edge' do
+          before do
+            board[4][0] = king
+          end
+
+          it 'has five moves' do
+            expect(king.valid_moves).to eq(Set[
+              [5, 0], [5, 1], [4, 1], [3, 0], [3, 1]
+            ])
+          end
+        end
+
+        context 'when the king is in the middle' do
+          before do
+            board[4][4] = king
+          end
+
+          it 'has eight moves' do
+            expect(king.valid_moves).to eq(Set[
+              [5, 3], [5, 4], [5, 5], [4, 3], [3, 3], [3, 4], [3, 5], [4, 5]
+            ])
+          end
+        end
+      end
+
+      context 'when the king is black and in the middle' do
+        subject(:king) { King.new(:black, board, [0, 4]) }
+
+        before do
+          board[4][4] = king
+        end
+
+        it 'has eight moves' do
+          expect(king.valid_moves).to eq(Set[
+            [5, 3], [5, 4], [5, 5], [4, 3], [3, 3], [3, 4], [3, 5], [4, 5]
+          ])
+        end
+      end
+
+      context 'when there is a piece the king can capture' do
+        subject(:king) { King.new(:white, board, [0, 4]) }
+
+        before do
+          board[4][4] = king
+          board[5][3] = Knight.new(:black, board)
+        end
+
+        it 'can capture it' do
+          expect(king.valid_moves).to eq(Set[
+            [5, 3], [5, 4], [5, 5], [4, 3], [3, 3], [3, 4], [3, 5], [4, 5]
+          ])
+        end
+      end
+
+      context 'when there is a player\'s piece within the king\'s range' do
+        subject(:king) { King.new(:white, board, [0, 4]) }
+
+        before do
+          board[4][4] = king
+          board[5][3] = Knight.new(:white, board)
+        end
+
+        it 'can capture it' do
+          expect(king.valid_moves).to eq(Set[
+            [5, 4], [5, 5], [4, 3], [3, 3], [3, 4], [3, 5], [4, 5]
+          ])
+        end
+      end
+    end
+
+    describe 'castling' do
+      let(:board) { empty_board }
+
+      context 'when a king is white' do
+        subject(:king) { King.new(:white, board, [0, 4]) }
+
+        before do
+          board[0][4] = king
+        end
+
+        context 'on its first move' do
+          describe 'kingside' do
+            context 'when the kingside rook has not moved' do
+              before do
+                board[0][7] = Rook.new(:white, board, [0, 7])
+              end
+
+              it 'castling kingside is possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5], [0, 6]
+                ])
+              end
+            end
+
+            context 'when there is a different piece in place of rook' do
+              before do
+                board[0][7] = Bishop.new(:white, board)
+              end
+
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when there is no piece in place of the rook' do
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when the kingside rook has moved' do
+              before do
+                board[5][7] = Rook.new(:white, board, [0, 7])
+                board[5][7].valid_moves
+
+                board[0][7] = board[5][7]
+                board[5][7] = nil
+              end
+
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when an opponents piece occupies a castling square' do
+              before do
+                board[0][7] = Rook.new(:white, board, [0, 7])
+              end
+
+              context 'f1' do
+                before do
+                  board[0][5] = Knight.new(:black, board)
+                end
+
+                it 'castling kingside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                  ])
+                end
+              end
+              context 'g1' do
+                before do
+                  board[0][6] = Knight.new(:black, board)
+                end
+
+                it 'castling kingside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                  ])
+                end
+              end
+            end
+          end
+
+          describe 'queenside' do
+            context 'when the queenside rook has not moved' do
+              before do
+                board[0][0] = Rook.new(:white, board, [0, 0])
+              end
+
+              it 'castling queenside is possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5], [0, 2]
+                ])
+              end
+            end
+
+            context 'when there is a different piece in place of rook' do
+              before do
+                board[0][0] = Bishop.new(:white, board)
+              end
+
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when there is no piece in place of the rook' do
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when the queenside rook has moved' do
+              before do
+                board[5][0] = Rook.new(:white, board, [0, 0])
+                board[5][0].valid_moves
+
+                board[0][0] = board[5][0]
+                board[5][0] = nil
+              end
+
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                ])
+              end
+            end
+
+            context 'when an opponents piece occupies a castling square' do
+              before do
+                board[0][0] = Rook.new(:white, board, [0, 0])
+              end
+
+              context 'b1' do
+                before do
+                  board[0][1] = Knight.new(:black, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                  ])
+                end
+              end
+              context 'c1' do
+                before do
+                  board[0][2] = Knight.new(:black, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                  ])
+                end
+              end
+
+              context 'd1' do
+                before do
+                  board[0][3] = Knight.new(:black, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+                  ])
+                end
+              end
+            end
+          end
+
+          context 'when neither rook has moved' do
+            before do
+              board[0][0] = Rook.new(:white, board, [0, 0])
+              board[0][7] = Rook.new(:white, board, [0, 7])
+            end
+
+            it 'is possible to castle either kingside or queenside' do
+              expect(king.valid_moves).to eq(Set[
+                [0, 2], [0, 3], [1, 3], [1, 4], [1, 5], [0, 5], [0, 6]
+              ])
+            end
+          end
+        end
+
+        context 'when the king has already moved' do
+          before do
+            king.valid_moves
+            board[1][4] = king
+            board[0][4] = nil
+
+            king.valid_moves
+            board[0][4] = king
+            board[1][4] = nil
+
+            board[0][0] = Rook.new(:white, board, [0, 0])
+            board[0][7] = Rook.new(:white, board, [0, 7])
+          end
+
+          it 'is not possible to castle' do
+            expect(king.valid_moves).to eq(Set[
+              [0, 3], [1, 3], [1, 4], [1, 5], [0, 5]
+            ])
+          end
+        end
+      end
+
+      context 'when a king is black' do
+        subject(:king) { King.new(:black, board, [7, 4]) }
+
+        before do
+          board[7][4] = king
+        end
+
+        context 'on its first move' do
+          describe 'kingside' do
+            context 'when the kingside rook has not moved' do
+              before do
+                board[7][7] = Rook.new(:black, board, [7, 7])
+              end
+
+              it 'castling kingside is possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5], [7, 6]
+                ])
+              end
+            end
+
+            context 'when there is a different piece in place of rook' do
+              before do
+                board[7][7] = Bishop.new(:black, board)
+              end
+
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when there is no piece in place of the rook' do
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when the kingside rook has moved' do
+              before do
+                board[5][7] = Rook.new(:black, board, [7, 7])
+                board[5][7].valid_moves
+
+                board[7][7] = board[5][7]
+                board[5][7] = nil
+              end
+
+              it 'castling kingside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when the player\'s piece occupies a castling square' do
+              before do
+                board[7][7] = Rook.new(:black, board, [7, 7])
+              end
+
+              context 'f7' do
+                before do
+                  board[7][5] = Knight.new(:black, board)
+                end
+
+                it 'castling kingside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [7, 3], [6, 3], [6, 4], [6, 5],
+                  ])
+                end
+              end
+              context 'g7' do
+                before do
+                  board[7][6] = Knight.new(:black, board)
+                end
+
+                it 'castling kingside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                  ])
+                end
+              end
+            end
+          end
+
+          describe 'queenside' do
+            context 'when the queenside rook has not moved' do
+              before do
+                board[7][0] = Rook.new(:black, board, [7, 0])
+              end
+
+              it 'castling queenside is possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5], [7, 2]
+                ])
+              end
+            end
+
+            context 'when there is a different piece in place of rook' do
+              before do
+                board[7][0] = Bishop.new(:black, board)
+              end
+
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when there is no piece in place of the rook' do
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when the queenside rook has moved' do
+              before do
+                board[5][0] = Rook.new(:black, board, [7, 0])
+                board[5][0].valid_moves
+
+                board[7][0] = board[5][0]
+                board[5][0] = nil
+              end
+
+              it 'castling queenside is not possible' do
+                expect(king.valid_moves).to eq(Set[
+                  [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                ])
+              end
+            end
+
+            context 'when an opponents piece occupies a castling square' do
+              before do
+                board[7][0] = Rook.new(:black, board, [7, 0])
+              end
+
+              context 'b7' do
+                before do
+                  board[7][1] = Knight.new(:white, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                  ])
+                end
+              end
+
+              context 'c7' do
+                before do
+                  board[7][2] = Knight.new(:white, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                  ])
+                end
+              end
+
+              context 'd7' do
+                before do
+                  board[7][3] = Knight.new(:white, board)
+                end
+
+                it 'castling queenside is not possible' do
+                  expect(king.valid_moves).to eq(Set[
+                    [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+                  ])
+                end
+              end
+            end
+          end
+
+          context 'when neither rook has moved' do
+            before do
+              board[7][0] = Rook.new(:black, board, [7, 0])
+              board[7][7] = Rook.new(:black, board, [7, 7])
+            end
+
+            it 'is possible to castle either kingside or queenside' do
+              expect(king.valid_moves).to eq(Set[
+                [7, 2], [7, 3], [6, 3], [6, 4], [6, 5], [7, 5], [7, 6]
+              ])
+            end
+          end
+        end
+
+        context 'when the king has already moved' do
+          before do
+            king.valid_moves
+            board[6][4] = king
+            board[7][4] = nil
+
+            king.valid_moves
+            board[7][4] = king
+            board[6][4] = nil
+
+            board[7][0] = Rook.new(:black, board, [7, 0])
+            board[7][7] = Rook.new(:black, board, [7, 7])
+          end
+
+          it 'is not possible to castle' do
+            expect(king.valid_moves).to eq(Set[
+              [7, 3], [6, 3], [6, 4], [6, 5], [7, 5]
+            ])
+          end
+        end
+      end
+    end
+  end
+end
