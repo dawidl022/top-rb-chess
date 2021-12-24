@@ -114,7 +114,21 @@ class Knight < Piece
     @symbol = @colour == :white ? '♘' : '♞'
   end
 
+  def on_chessboard
+    proc { |(x, y)| x >= 0 && x <= 7 && y >= 0 && y <= 7 }
+  end
+
   def valid_moves
+    current_position = position
+
+    Set.new(
+    [[1, 2], [2, 1], [-1, -2], [-2, -1], [1, -2], [2, -1], [-1, 2], [-2, 1]]
+    .map do |difference|
+      [current_position[0] + difference[0], current_position[1] + difference[1]]
+    end.filter(&on_chessboard)  # don't allow knight to leave chessboard
+    .filter do |(rank, file)|
+      !@board[rank][file] || @board[rank][file].colour != @colour
+    end)
   end
 end
 

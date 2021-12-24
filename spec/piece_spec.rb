@@ -904,3 +904,107 @@ RSpec.describe Queen do
     end
   end
 end
+
+RSpec.describe Knight do
+  include Util
+
+  describe "#valid_moves" do
+    context 'on a starting board' do
+      let(:knights_moves) do
+        [
+          starting_board[0][1], starting_board[7][1],
+          starting_board[0][6], starting_board[7][6]
+        ].map { |knight| knight.valid_moves }
+      end
+
+      it 'each knight has two possible moves' do
+        expect(knights_moves).to all(have_attributes(length: 2))
+      end
+    end
+
+    context 'on a board with just a knight on it' do
+      let(:board) { empty_board }
+      context 'when the knight is white' do
+        subject(:knight) { Knight.new(:white, board) }
+
+        context 'when the knight is in the corner' do
+          before do
+            board[7][7] = knight
+          end
+
+          it 'has two moves' do
+            expect(knight.valid_moves).to eq(Set[[6, 5], [5, 6]])
+          end
+        end
+
+        context 'when the knight is on the edge' do
+          before do
+            board[4][7] = knight
+          end
+
+          it 'has four moves' do
+            expect(knight.valid_moves).to eq(Set[
+              [6, 6], [5, 5], [3, 5], [2, 6]
+            ])
+          end
+        end
+
+        context 'when the knight is in the middle' do
+          before do
+            board[4][4] = knight
+          end
+
+          it 'has eight moves' do
+            expect(knight.valid_moves).to eq(Set[
+              [5, 2], [6, 3], [6, 5], [5, 6], [3, 6], [2, 5], [2, 3], [3, 2]
+            ])
+          end
+        end
+      end
+
+      context 'when the knight is black and in the middle' do
+        subject(:knight) { Knight.new(:black, board) }
+
+        before do
+          board[4][4] = knight
+        end
+
+        it 'has eight moves' do
+          expect(knight.valid_moves).to eq(Set[
+            [5, 2], [6, 3], [6, 5], [5, 6], [3, 6], [2, 5], [2, 3], [3, 2]
+          ])
+        end
+      end
+
+      context 'when there is a piece the knight can capture' do
+        subject(:knight) { Knight.new(:white, board) }
+
+        before do
+          board[4][4] = knight
+          board[5][2] = Knight.new(:black, board)
+        end
+
+        it 'can capture it' do
+          expect(knight.valid_moves).to eq(Set[
+            [5, 2], [6, 3], [6, 5], [5, 6], [3, 6], [2, 5], [2, 3], [3, 2]
+          ])
+        end
+      end
+
+      context 'when there is a player\'s piece within the knights range' do
+        subject(:knight) { Knight.new(:white, board) }
+
+        before do
+          board[4][4] = knight
+          board[5][2] = Knight.new(:white, board)
+        end
+
+        it 'can capture it' do
+          expect(knight.valid_moves).to eq(Set[
+            [6, 3], [6, 5], [5, 6], [3, 6], [2, 5], [2, 3], [3, 2]
+          ])
+        end
+      end
+    end
+  end
+end
