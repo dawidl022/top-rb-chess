@@ -1,4 +1,5 @@
 require_relative 'chessboard'
+require_relative 'movables'
 require 'set'
 
 class Piece
@@ -118,32 +119,53 @@ class Knight < Piece
 end
 
 class Bishop < Piece
+  include MovableDiagonal
+
   def initialize(colour, board)
     super
     @symbol = @colour == :white ? '♗' : '♝'
   end
 
   def valid_moves
+    # TODO include check each move to see if check exists, if so filter it out
+    @rank, @file = position
+
+    diagonal_moves
   end
 end
 
 class Rook < Piece
+  include MovableStraight
+
   def initialize(colour, board, starting_square = nil)
     super
     @symbol = @colour == :white ? '♖' : '♜'
   end
 
   def valid_moves
+    # TODO include check each move to see if check exists, if so filter it out
+    @rank, @file = position
+
+    straight_moves
   end
 end
 
 class Queen < Piece
+  include MovableStraight
+  include MovableDiagonal
+
   def initialize(colour, board)
     super
     @symbol = @colour == :white ? '♕' : '♛'
   end
 
   def valid_moves
+    # TODO include check each move to see if check exists, if so filter it out
+    @rank, @file = position
+    moves = Set[]
+
+    moves.merge(straight_moves)
+    moves.merge(diagonal_moves)
   end
 end
 

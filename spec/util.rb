@@ -26,4 +26,8 @@ module Util
       Knight.new(:black, board), Rook.new(:black, board, [7, 7])
     ]
   end
+
+  def empty_board
+    Array.new(8) { Array.new(8) }
+  end
 end

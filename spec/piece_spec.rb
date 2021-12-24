@@ -245,7 +245,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is an en passant opportunity on the left' do
-          let(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
+          subject(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
 
           before do
             board[4][4] = white_pawn
@@ -289,7 +289,7 @@ RSpec.describe Pawn do
         end
 
         context 'when en passant is not possible, but pawn is on the left' do
-          let(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
+          subject(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
 
           before do
             board[4][4] = white_pawn
@@ -311,7 +311,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is the opponents piece on the left' do
-          let(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
+          subject(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
 
           before do
             board[4][4] = white_pawn
@@ -324,7 +324,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is the players piece on the left' do
-          let(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
+          subject(:white_pawn) { Pawn.new(:white, board, [1, 4]) }
 
           before do
             board[4][4] = white_pawn
@@ -462,7 +462,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is an en passant opportunity on the left' do
-          let(:black_pawn) { Pawn.new(:black, board, [6, 4]) }
+          subject(:black_pawn) { Pawn.new(:black, board, [6, 4]) }
 
           before do
             board[3][4] = black_pawn
@@ -484,7 +484,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is an en passant opportunity on the right' do
-          let(:black_pawn) { Pawn.new(:black, board, [6, 4]) }
+          subject(:black_pawn) { Pawn.new(:black, board, [6, 4]) }
 
           before do
             board[3][4] = black_pawn
@@ -506,7 +506,7 @@ RSpec.describe Pawn do
         end
 
         context 'when en passant is not possible, but pawn is on the left' do
-          let(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
+          subject(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
 
           before do
             board[4][4] = black_pawn
@@ -529,7 +529,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is the opponents piece on the left' do
-          let(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
+          subject(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
 
           before do
             board[3][4] = black_pawn
@@ -542,7 +542,7 @@ RSpec.describe Pawn do
         end
 
         context 'when there is the player\'s piece on the left' do
-          let(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
+          subject(:black_pawn) { Pawn.new(:black, board, [1, 4]) }
 
           before do
             board[3][4] = black_pawn
@@ -552,6 +552,353 @@ RSpec.describe Pawn do
           it 'does not show capture opportunity' do
             expect(black_pawn.valid_moves('Bf2')).to eq(Set[[2, 4]])
           end
+        end
+      end
+    end
+  end
+end
+
+RSpec.describe Rook do
+  include Util
+
+  describe "#valid_moves" do
+    context 'on a starting board' do
+      let(:rooks_moves) do
+        [
+          starting_board[0][0], starting_board[0][7], starting_board[7][0],
+          starting_board[7][7]
+        ].map { |rook| rook.valid_moves }
+      end
+
+      it 'no rook has any moves' do
+        expect(rooks_moves).to all(eq(Set[]))
+      end
+    end
+
+    context 'on a board with just a rook on it' do
+      let(:board) { empty_board }
+
+      context 'when the rook is white' do
+        subject(:rook) { Rook.new(:white, board) }
+
+        context 'when the rook is in the corner' do
+          before do
+            board[0][0] = rook
+          end
+
+          it 'can move anywhere along the file it is on' do
+            expect(rook.valid_moves).to include(
+              [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]
+            )
+          end
+
+          it 'can move anywhere along the rank it is on' do
+            expect(rook.valid_moves).to include(
+              [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]
+            )
+          end
+        end
+
+        context 'when the rook is on an edge' do
+          before do
+            board[4][0] = rook
+          end
+
+          it 'can move anywhere along the file or rank it is on' do
+            expect(rook.valid_moves).to eq(Set[
+              [0, 0], [1, 0], [2, 0], [3, 0], [5, 0], [6, 0], [7, 0],
+              [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [4, 6], [4, 7]
+            ])
+          end
+        end
+
+        context 'when the rook is in the middle' do
+          before do
+            board[4][5] = rook
+          end
+
+          it 'can move anywhere along the file or rank it is on' do
+            expect(rook.valid_moves).to eq(Set[
+              [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+              [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+            ])
+          end
+        end
+      end
+
+      context 'when the rook is black' do
+        subject(:rook) { Rook.new(:black, board) }
+        before do
+          board[4][5] = rook
+        end
+
+        it 'can move anywhere along the file or rank it is on' do
+          expect(rook.valid_moves).to eq(Set[
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+            [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
+        end
+      end
+    end
+
+    context 'when an opponent piece is in the rooks path' do
+      subject(:rook) { Rook.new(:white, board) }
+      let(:board) { empty_board }
+
+      context 'on a rank' do
+        before do
+          board[4][5] = rook
+          board[4][2] = Rook.new(:black, board)
+        end
+
+        it 'can move anywhere up to that piece and capture it' do
+          expect(rook.valid_moves).to eq(Set[
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+            [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
+        end
+      end
+
+      context 'on a file' do
+        before do
+          board[4][5] = rook
+          board[6][5] = Rook.new(:black, board)
+        end
+
+        it 'can move anywhere up to that piece and capture it' do
+          expect(rook.valid_moves).to eq(Set[
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5],
+            [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
+        end
+      end
+    end
+
+    context 'when the player\'s piece is in the rooks path' do
+      subject(:rook) { Rook.new(:white, board) }
+      let(:board) { empty_board }
+
+      context 'on a rank' do
+        before do
+          board[4][5] = rook
+          board[4][2] = Rook.new(:white, board)
+        end
+
+        it 'can move anywhere up to that piece' do
+          expect(rook.valid_moves).to eq(Set[
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+            [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
+        end
+      end
+
+      context 'on a file' do
+        before do
+          board[4][5] = rook
+          board[6][5] = Rook.new(:white, board)
+        end
+
+        it 'can move anywhere up to that piece' do
+          expect(rook.valid_moves).to eq(Set[
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5],
+            [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
+        end
+      end
+    end
+  end
+end
+
+
+RSpec.describe Bishop do
+  include Util
+
+  describe "#valid_moves" do
+    context 'on a starting board' do
+      let(:bishops_moves) do
+        [
+          starting_board[0][2], starting_board[0][5], starting_board[7][2],
+          starting_board[7][5]
+        ].map { |bishop| bishop.valid_moves }
+      end
+
+      it 'no bishop has any moves' do
+        expect(bishops_moves).to all(eq(Set[]))
+      end
+    end
+
+    context 'on a board with just a bishop on it' do
+      let(:board) { empty_board }
+      context 'when the bishop is white' do
+        subject(:bishop) { Bishop.new(:white, board) }
+
+        context 'when the bishop is in the corner' do
+          before do
+            board[0][0] = bishop
+          end
+
+          it 'can move anywhere along the diagonal it is on' do
+            expect(bishop.valid_moves).to eq(Set[
+              [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7]
+            ])
+          end
+        end
+
+        context 'when the bishop is on an edge' do
+          before do
+            board[4][0] = bishop
+          end
+
+          it 'can move anywhere along the two diagonals it is on' do
+            expect(bishop.valid_moves).to eq(Set[
+              [3, 1], [2, 2], [1, 3], [0, 4], [5, 1], [6, 2], [7, 3]
+            ])
+          end
+        end
+
+        context 'when the bishop is in the middle' do
+          before do
+            board[4][5] = bishop
+          end
+
+          it 'can move anywhere along the two diagonals it is on' do
+            expect(bishop.valid_moves).to eq(Set[
+              [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+              [0, 1], [1, 2], [2, 3], [3, 4], [5, 6], [6, 7]
+            ])
+          end
+        end
+      end
+
+      context 'when the bishop is black' do
+        subject(:bishop) { Bishop.new(:black, board) }
+        before do
+          board[4][5] = bishop
+        end
+
+        it 'can move anywhere along the two diagonals it is on' do
+          expect(bishop.valid_moves).to eq(Set[
+            [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+            [0, 1], [1, 2], [2, 3], [3, 4], [5, 6], [6, 7]
+          ])
+        end
+      end
+    end
+
+    context 'when an opponent piece is in the bishops path' do
+      subject(:bishop) { Bishop.new(:white, board) }
+      let(:board) { empty_board }
+
+      before do
+        board[4][5] = bishop
+        board[2][3] = Bishop.new(:black, board)
+      end
+
+      it 'can move anywhere up to that piece and capture it' do
+        expect(bishop.valid_moves).to eq(Set[
+          [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+          [2, 3], [3, 4], [5, 6], [6, 7]
+        ])
+      end
+    end
+
+    context 'when the player\'s piece is in the rooks path' do
+      subject(:bishop) { Bishop.new(:white, board) }
+      let(:board) { empty_board }
+
+      before do
+        board[4][5] = bishop
+        board[2][3] = Bishop.new(:white, board)
+      end
+
+      it 'can move anywhere up to that piece' do
+        expect(bishop.valid_moves).to eq(Set[
+          [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+          [3, 4], [5, 6], [6, 7]
+        ])
+      end
+    end
+  end
+end
+
+RSpec.describe Queen do
+  include Util
+
+  describe "#valid_moves" do
+    context 'on a starting board' do
+      let(:queens_moves) do
+        [
+          starting_board[0][3], starting_board[7][3]
+        ].map { |queen| queen.valid_moves }
+      end
+
+      it 'no queen has any moves' do
+        expect(queens_moves).to all(eq(Set[]))
+      end
+    end
+
+    context 'on a board with just a queen on it' do
+      let(:board) { empty_board }
+      context 'when the queen is white' do
+        subject(:queen) { Queen.new(:white, board) }
+
+        context 'when the queen is in the corner' do
+          before do
+            board[0][0] = queen
+          end
+
+          it 'can move along the diagonal, rank and file it is on' do
+            expect(queen.valid_moves).to eq(Set[
+              [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7],
+              [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0],
+              [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6], [0, 7]
+            ])
+          end
+        end
+
+        context 'when the queen is on an edge' do
+          before do
+            board[4][0] = queen
+          end
+
+          it 'can move along the two diagonals, rank and file it is on' do
+            expect(queen.valid_moves).to eq(Set[
+              [3, 1], [2, 2], [1, 3], [0, 4], [5, 1], [6, 2], [7, 3],
+              [0, 0], [1, 0], [2, 0], [3, 0], [5, 0], [6, 0], [7, 0],
+              [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [4, 6], [4, 7]
+            ])
+          end
+        end
+
+        context 'when the queen is in the middle' do
+          before do
+            board[4][5] = queen
+          end
+
+          it 'can move along the two diagonals,rank and file it is on' do
+            expect(queen.valid_moves).to eq(Set[
+              [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+              [0, 1], [1, 2], [2, 3], [3, 4], [5, 6], [6, 7],
+              [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+              [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+            ])
+          end
+        end
+      end
+
+      context 'when the queen is black' do
+        subject(:queen) { Queen.new(:black, board) }
+        before do
+          board[4][5] = queen
+        end
+
+        it 'can move anywhere along the two diagonals it is on' do
+          expect(queen.valid_moves).to eq(Set[
+            [7, 2], [6, 3], [5, 4], [3, 6], [2, 7],
+            [0, 1], [1, 2], [2, 3], [3, 4], [5, 6], [6, 7],
+            [0, 5], [1, 5], [2, 5], [3, 5], [5, 5], [6, 5], [7, 5],
+            [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 6], [4, 7]
+          ])
         end
       end
     end
