@@ -12,11 +12,6 @@ class Piece
     @first_move = !!starting_square
   end
 
-  def valid_move?(file_index, rank_index, last_opponent_move = nil)
-    # TODO: include last_opponent_move param
-    valid_moves(last_opponent_move).include?([file_index, rank_index])
-  end
-
   def position
     @board.each_with_index do |rank, rank_index|
       rank.each_with_index do |square, file_index|
@@ -29,6 +24,7 @@ class Piece
   def to_s
     "#{symbol}#{Chessboard.indices_to_notation(*position)}"
   end
+  alias inspect to_s
 
   protected
 

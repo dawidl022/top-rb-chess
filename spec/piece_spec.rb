@@ -1,9 +1,9 @@
 require_relative '../lib/piece'
-require_relative 'util'
+require_relative '../boards'
 require 'set'
 
 RSpec.describe Piece do
-  include Util
+  include Boards
 
   describe '#position' do
     context 'white pawn in starting position' do
@@ -63,51 +63,6 @@ RSpec.describe Piece do
     end
   end
 
-  describe '#valid_move' do
-    let(:board) { starting_board }
-
-    context 'when given a valid move' do
-      let(:white_pawn) { board[1][4] }
-
-      it 'returns true' do
-        expect(white_pawn.valid_move?(3, 4)).to be true
-      end
-    end
-
-    context 'when given an invalid move' do
-      let(:white_pawn) { board[1][4] }
-
-      it 'returns true' do
-        expect(white_pawn.valid_move?(5, 4)).to be false
-        expect(white_pawn.valid_move?(1, 4)).to be false
-      end
-    end
-
-    context 'when opponents last move play a role' do
-      context 'en passant possible and try going there' do
-        let(:black_pawn) { Pawn.new(:black, board, [6, 4]) }
-
-        before do
-          board[3][4] = black_pawn
-
-          white_pawn = board[1][3]
-          white_pawn.valid_moves
-
-          board[3][3] = white_pawn
-          board[1][3] = nil
-        end
-
-        it 'returns true' do
-          expect(black_pawn.valid_move?(2, 3, 'd4')).to be true
-        end
-      end
-    end
-
-    context 'when opponents last move does not play a role' do
-      pending 'other pieces not yet implemented'
-    end
-  end
-
   describe "#to_s" do
     let(:board) { empty_board }
     describe "returns the unicode char along with chess notation position" do
@@ -125,11 +80,18 @@ RSpec.describe Piece do
         expect(rook.to_s).to eq('♜a7')
       end
     end
+
+    it "#inspect is an alias" do
+      rook = Rook.new(:black, board, [7, 7])
+      board[6][0] = rook
+
+      expect(rook.inspect).to eq(rook.to_s)
+    end
   end
 end
 
 RSpec.describe Pawn do
-  include Util
+  include Boards
 
   describe '#valid_moves' do
     let(:board) { starting_board }
@@ -572,7 +534,7 @@ RSpec.describe Pawn do
 end
 
 RSpec.describe Rook do
-  include Util
+  include Boards
 
   describe "#valid_moves" do
     context 'on a starting board' do
@@ -724,7 +686,7 @@ end
 
 
 RSpec.describe Bishop do
-  include Util
+  include Boards
 
   describe "#valid_moves" do
     context 'on a starting board' do
@@ -835,7 +797,7 @@ RSpec.describe Bishop do
 end
 
 RSpec.describe Queen do
-  include Util
+  include Boards
 
   describe "#valid_moves" do
     context 'on a starting board' do
@@ -919,7 +881,7 @@ RSpec.describe Queen do
 end
 
 RSpec.describe Knight do
-  include Util
+  include Boards
 
   describe "#valid_moves" do
     context 'on a starting board' do
@@ -1023,7 +985,7 @@ RSpec.describe Knight do
 end
 
 RSpec.describe King do
-  include Util
+  include Boards
 
   describe "#valid_moves" do
     context 'on a starting board' do
