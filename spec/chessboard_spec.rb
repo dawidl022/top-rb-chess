@@ -277,7 +277,6 @@ RSpec.describe Chessboard do
       context 'when it is unambiguous' do
         context 'on a starting board as white' do
           it 'moves Knight to c3' do
-            pending 'pawn not finished'
             knight = board.board[0][1]
             board.move("Nc3", :white)
             expect(knight.position).to eq([2, 2])
@@ -287,16 +286,236 @@ RSpec.describe Chessboard do
         end
 
 
-        context 'on a starting board as black'
+        context 'on a starting board as black' do
+          it 'moves Knight to f6' do
+            knight = board.board[7][6]
+            board.move("Nc3", :white)
+            board.move("Nf6", :black)
+            expect(knight.position).to eq([5, 5])
+            expect(board.board[5][5]).to be knight
+            expect(board.board[7][6]).to be_nil
+          end
+        end
       end
 
-      context 'when additional notation is supplied to disambiguate'
+      context 'when additional notation is supplied to disambiguate' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[2][2] = Knight.new(:white, board.board)
+          board.board[2][4] = Knight.new(:white, board.board)
+          board.board[6][2] = Knight.new(:white, board.board)
+          board.board[0][5] = King.new(:white, board.board, [0, 4])
+          board.board[7][6] = King.new(:black, board.board, [7, 4])
+          board.board[6][6] = Pawn.new(:black, board.board, [6, 6])
+        end
 
-      context 'when it is ambiguous'
+        it 'moves knight e3 to d5' do
+          knight = board.board[2][4]
+          board.move('Ned5', :white)
+          expect(knight.position).to eq([4, 3])
+          expect(board.board[4][3]).to be knight
+          expect(board.board[2][4]).to be_nil
+        end
 
-      context 'when move causes player to be under check'
+        it 'moves knight c7 to d5' do
+          knight = board.board[6][2]
+          board.move('N7d5', :white)
+          expect(knight.position).to eq([4, 3])
+          expect(board.board[4][3]).to be knight
+          expect(board.board[6][2]).to be_nil
+        end
 
-      context 'invalid'
+        it 'moves knight c3 to d5' do
+          knight = board.board[2][2]
+          board.move('Nc3d5', :white)
+          expect(knight.position).to eq([4, 3])
+          expect(board.board[4][3]).to be knight
+          expect(board.board[2][2]).to be_nil
+        end
+      end
+
+      context 'when redundant disambiguation is supplied' do
+        context 'on a starting board as white' do
+          it 'moves Knight to c3' do
+            knight = board.board[0][1]
+            board.move("Nb1c3", :white)
+            expect(knight.position).to eq([2, 2])
+            expect(board.board[2][2]).to be knight
+            expect(board.board[0][1]).to be_nil
+          end
+
+          it 'records move without redundancy'
+        end
+      end
+
+      context 'when it is ambiguous' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[2][2] = Knight.new(:white, board.board)
+          board.board[2][4] = Knight.new(:white, board.board)
+          board.board[6][2] = Knight.new(:white, board.board)
+          board.board[0][5] = King.new(:white, board.board, [0, 4])
+          board.board[7][6] = King.new(:black, board.board, [7, 4])
+          board.board[6][6] = Pawn.new(:black, board.board, [6, 6])
+        end
+
+        it 'returns a message' do
+          expect(board.move('Nd5', :white)). to eq(
+            'Multiple knights can go to d5, please disambiguate'
+          )
+        end
+
+        it 'does not move any piece' do
+          expect { board.move('Nd5', :white) }.to_not change { board.board }
+        end
+      end
+
+      context 'when move causes player to be under check' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[7][2] = King.new(:black, board.board, [7, 4])
+          board.board[2][0] = Rook.new(:black, board.board)
+          board.board[2][3] = Knight.new(:white, board.board)
+          board.board[2][4] = King.new(:white, board.board, [0, 4])
+        end
+
+        it 'knight cannot move' do
+          expect(board.move('Nc5', :white)).to eq('Illegal move')
+        end
+
+        it 'board is unchanged' do
+          expect { board.move('Nc5', :white) }.to_not change { board.board }
+        end
+      end
+
+      context 'invalid' do
+        context 'no knight can access that square' do
+          it 'returns message' do
+            expect(board.move('Nd5', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'there is no knight of that colour on the board' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+          end
+
+          it 'returns message' do
+            expect(board.move('Nd5', :white)).to eq('Illegal move')
+          end
+        end
+      end
+    end
+
+    describe "Bishop" do
+      context 'when it is unambiguous' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[7][7] = King.new(:black, board.board, [7, 4])
+          board.board[6][0] = Rook.new(:black, board.board)
+          board.board[3][1] = Bishop.new(:white, board. board)
+          board.board[2][4] = King.new(:white, board.board, [[0, 4]])
+        end
+
+        it 'moves bishop to c5' do
+          bishop = board.board[3][1]
+          board.move('Bc5', :white)
+          expect(bishop.position).to eq([4, 2])
+          expect(board.board[4][2]).to be bishop
+          expect(board.board[3][1]).to be_nil
+        end
+      end
+
+      context 'when additional notation is supplied to disambiguate' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[7][6] = King.new(:black, board.board, [7, 4])
+          board.board[0][5] = King.new(:white, board.board, [0, 4])
+          board.board[6][0] = Rook.new(:black, board.board)
+
+          board.board[4][2] = Bishop.new(:white, board.board)
+          board.board[4][4] = Bishop.new(:white, board.board)
+          board.board[6][4] = Bishop.new(:white, board.board)
+        end
+
+        it 'moves bishop c5 to d6' do
+          bishop = board.board[4][2]
+          board.move('Bcd6', :white)
+          expect(bishop.position).to eq([5, 3])
+          expect(board.board[5][3]).to be bishop
+          expect(board.board[4][2]).to be_nil
+        end
+
+        it 'moves bishop e7 to d6' do
+          bishop = board.board[6][4]
+          board.move('B7d6', :white)
+          expect(bishop.position).to eq([5, 3])
+          expect(board.board[5][3]).to be bishop
+          expect(board.board[6][4]).to be_nil
+        end
+
+        it 'moves bishop e5 to d6' do
+          bishop = board.board[4][4]
+          board.move('Be5d6', :white)
+          expect(bishop.position).to eq([5, 3])
+          expect(board.board[5][3]).to be bishop
+          expect(board.board[4][4]).to be_nil
+        end
+      end
+
+      context 'when it is ambiguous' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[7][6] = King.new(:black, board.board, [7, 4])
+          board.board[0][5] = King.new(:white, board.board, [0, 4])
+          board.board[6][0] = Rook.new(:black, board.board)
+
+          board.board[4][2] = Bishop.new(:white, board.board)
+          board.board[4][4] = Bishop.new(:white, board.board)
+          board.board[6][4] = Bishop.new(:white, board.board)
+        end
+
+        it 'returns a message' do
+          expect(board.move('Bd6', :white)). to eq(
+            'Multiple bishops can go to d6, please disambiguate'
+          )
+        end
+
+        it 'does not move any piece' do
+          expect { board.move('Bd6', :white) }.to_not change { board.board }
+        end
+      end
+
+      context 'when move causes player to be under check' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[7][0] = Bishop.new(:black, board.board)
+          board.board[4][3] = Bishop.new(:white, board.board)
+          board.board[5][6] = King.new(:black, board.board, [7, 4])
+          board.board[3][4] = King.new(:white, board.board, [0, 4])
+        end
+
+        it 'knight cannot move' do
+          expect(board.move('Bc4', :white)).to eq('Illegal move')
+        end
+
+        it 'board is unchanged' do
+          expect { board.move('Bc4', :white) }.to_not change { board.board }
+        end
+      end
+    end
+
+    context 'completely invalid notation' do
+      it 'returns message' do
+        expect(board.move('Ad4', :white)).to eq('Invalid move')
+        expect(board.move('qwerty', :black)).to eq('Invalid move')
+        expect(board.move('Hello world', :white)).to eq('Invalid move')
+      end
+    end
+
+    context 'when checking opponent' do
+      it 'places a + in the notation'
+      it 'returns a message'
     end
   end
 
