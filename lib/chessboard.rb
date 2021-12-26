@@ -158,6 +158,7 @@ class Chessboard
 
       if legal_moves(piece).include?(target)
         en_passant = notation[1] == 'x' && @board[target[0]][target[1]].nil?
+        @board[target[0] - 1][target[1]] = nil if en_passant
 
         @board[target[0]][target[1]] = piece
         @board[rank - diff][file] = nil

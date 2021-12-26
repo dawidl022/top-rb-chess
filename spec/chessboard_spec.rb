@@ -275,16 +275,24 @@ RSpec.describe Chessboard do
           end
         end
 
-        it 'is recorded with e.p.' do
-          expect do
+        context 'when it is legal' do
+          before do
             board.move('e4', :white)
             board.move('c5', :black)
             board.move('e5', :white)
             board.move('d5', :black)
             board.move('exd6', :white)
-          end.to change { board.moves }.from([]).to([
-            ['e4', 'c5'], ['e5', 'd5'], ['exd6 e.p.']
-          ])
+          end
+
+          it 'is recorded with e.p.' do
+            expect(board.moves).to eq([
+              ['e4', 'c5'], ['e5', 'd5'], ['exd6 e.p.']
+            ])
+          end
+
+          it 'removes the captured piece from the board' do
+            expect(board.board[4][3]).to be_nil
+          end
         end
       end
     end
