@@ -89,8 +89,7 @@ class Pawn < Piece
 
     last_opponent_move && piece_to_left && piece_to_left.is_a?(Pawn) \
     && piece_to_left.first_move_just_made \
-    && Chessboard.notation_to_indices(
-      last_opponent_move) == [@rank, @file - 1]
+    && last_pawn_move?(last_opponent_move, :-)
   end
 
   def en_passant_right?(last_opponent_move)
@@ -98,8 +97,16 @@ class Pawn < Piece
 
     last_opponent_move && piece_to_right && piece_to_right.is_a?(Pawn) \
     && piece_to_right.first_move_just_made \
-    && Chessboard.notation_to_indices(
-      last_opponent_move) == [@rank, @file + 1]
+    && last_pawn_move?(last_opponent_move, :+)
+  end
+
+  def last_pawn_move?(last_opponent_move, op)
+    begin
+      Chessboard.notation_to_indices(
+        last_opponent_move) == [@rank, @file.send(op, 1)]
+    rescue
+      false
+    end
   end
 end
 

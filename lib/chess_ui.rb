@@ -37,7 +37,31 @@ class ChessUI
         break
       end
 
-      until (result = @chessboard.move(player.move, player.colour)).equal?(true)
+      # TODO
+      # if @chessboard.dead_position
+      #   puts 'Draw. Dead position.'
+      # end
+
+      if @chessboard.moves_since_capture_or_pawn_move >= 75
+        puts 'Draw. 75 moves passed since last capture or pawn move.'
+        break
+      end
+
+      if @chessboard.nfold_repetition?(5)
+        puts 'Draw. Fivefold repetition.'
+        break
+      end
+
+      loop do
+        input = player.move
+        case input
+        when 'resign' then return resign(player.colour)
+        when 'draw' then break offer_draw(player, player.colour)
+        when 'save' then raise NotImplementedError
+        when 'quit' then return
+        end
+
+        break if (result = @chessboard.move(input, player.colour)).equal?(true)
         clear_screen(scroll: SCROLL)
         print_board
         put_blank_line
@@ -47,6 +71,47 @@ class ChessUI
   end
 
   private
+
+  def resign(colour)
+    puts "#{colour.to_s.capitalize} resigns."
+  end
+
+  def offer_draw(player, colour)
+    if @chessboard.moves_since_capture_or_pawn_move >= 50
+      puts 'Draw. 50 or more moves passed since last capture or pawn move.'
+      exit
+    elsif @chessboard.nfold_repetition?(3)
+      puts 'Draw. Threefold repetition.'
+      exit
+    else
+      puts 'Make your move to claim/offer a draw'
+      until (result = @chessboard.move(player.move, player.colour)).equal?(true)
+        clear_screen(scroll: SCROLL)
+        print_board
+        put_blank_line
+        puts result
+      end
+
+      clear_screen(scroll: SCROLL)
+      print_board
+      put_blank_line
+
+      if @chessboard.moves_since_capture_or_pawn_move >= 50
+        puts 'Draw. 50 or more moves passed since last capture or pawn move.'
+        exit
+      elsif @chessboard.nfold_repetition?(3)
+        puts 'Draw. Threefold repetition.'
+        exit
+      end
+
+      print "(#{Chessboard.opponent_colour(colour).to_s.capitalize}) " \
+        "Type in 'draw' to agree to the offered draw: "
+      if gets.chomp.downcase == 'draw'
+        puts 'Draw by agreement'
+        exit
+      end
+    end
+  end
 
   def print_board
     board_string = HINTS ? "8 " : ""

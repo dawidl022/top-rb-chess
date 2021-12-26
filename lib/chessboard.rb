@@ -46,6 +46,19 @@ class Chessboard
   def initialize
     @board = starting_board
     @moves = []
+    @moves_since_capture_or_pawn_move = { white: 0, black: 0 }
+    @capture_made_in_turn = { white: false, black: false }
+    @board_captures = []
+  end
+
+  def moves_since_capture_or_pawn_move
+    @moves_since_capture_or_pawn_move.min_by { |(k, v)| v }[1]
+  end
+
+  def nfold_repetition?(n)
+    current_board = @board_captures[-1]
+
+    @board_captures.filter { |board| board == current_board }.length >= n
   end
 
   def move(notation, colour)
@@ -56,6 +69,11 @@ class Chessboard
     if result == :ep
       record_move(notation + ' e.p.', colour)
       result = true
+    end
+
+    if result.equal?(true)
+      update_move_count(colour)
+      capture_board(colour)
     end
 
     result
@@ -82,6 +100,7 @@ class Chessboard
       cloned_board = clone_board
 
       cloned_chessboard.instance_variable_set(:@board, cloned_board)
+      cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
       piece_rank, piece_file = piece.position
 
       # simulate move on cloned chessboard
@@ -162,7 +181,7 @@ class Chessboard
 
       if legal_moves(piece).include?(target)
         en_passant = notation[1] == 'x' && @board[target[0]][target[1]].nil?
-        @board[target[0] - 1][target[1]] = nil if en_passant
+        @board[target[0] + diff][target[1]] = nil if en_passant
 
         @board[target[0]][target[1]] = piece
         @board[rank - diff][file] = nil
@@ -246,6 +265,8 @@ class Chessboard
 
     starting_rank, starting_file = pieces[0].position
 
+    @capture_made_in_turn[colour] = true if @board[target[0]][target[1]]
+
     @board[target[0]][target[1]] = pieces[0]
     @board[starting_rank][starting_file] = nil
 
@@ -307,12 +328,6 @@ class Chessboard
     nil
   end
 
-  def find_piece_in_rank
-  end
-
-  def find_piece_in_file
-  end
-
   def find_all_pieces(piece = Piece, colour)
     pieces = []
 
@@ -350,6 +365,54 @@ class Chessboard
     clone
   end
 
+  def capture_board(colour)
+    castling_rights = { white: [], black: [] }
+    en_passant_captures = { white: [], black: [] }
+
+    [:white, :black].each do |colour|
+      ['0-0', '0-0-0'].each do |castle_type|
+        cloned_chessboard = Chessboard.new
+        cloned_board = clone_board
+
+        cloned_chessboard.instance_variable_set(:@board, cloned_board)
+        cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
+
+        if move(castle_type, colour).equal?(true)
+          castling_rights[colour] << castle_type
+        end
+      end
+
+      pawns = find_all_pieces(Pawn, colour)
+      pawns.each do |pawn|
+        legal_moves(pawn).each do |move|
+          if move[1] != pawn.position[1] && @board[move[0]][move[1]].nil?
+            en_passant_captures[colour] << [pawn.position, move]
+          end
+        end
+      end
+
+    end
+
+    @board_captures << BoardCapture.new(@board.inspect, colour, castling_rights,
+                                        en_passant_captures)
+  end
+
+  def update_move_count(colour)
+    move = @moves[-1][-1]
+    if pawn_notation?(move) || pawn_promotion_notation?(move) \
+    || @capture_made_in_turn[colour]
+      @moves_since_capture_or_pawn_move[colour] = 0
+    else
+      @moves_since_capture_or_pawn_move[colour] += 1
+    end
+
+    @capture_made_in_turn[colour] = false
+  end
+
+  def cloned_moves
+    Marshal.load(Marshal.dump(@moves))
+  end
+
   def pawn_notation?(notation)
     notation.length == 2 \
     || (lowercase?(notation[0]) && notation[1] == 'x' && notation.length == 4)
@@ -361,5 +424,23 @@ class Chessboard
 
   def lowercase?(string)
     string == string.downcase
+  end
+end
+
+class BoardCapture
+  attr_reader :board_inspection, :castling_rights, :colour, :en_passant_captures
+
+  def initialize(board, colour, castling_rights, en_passant_captures)
+    @board_inspection = board
+    @colour = colour
+    @castling_rights = castling_rights
+    @en_passant_captures = en_passant_captures
+  end
+
+  def ==(other)
+    @board_inspection == other.board_inspection && \
+    @colour == other.colour && \
+    @castling_rights == other.castling_rights && \
+    @en_passant_captures == other.en_passant_captures
   end
 end

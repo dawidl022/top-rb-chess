@@ -5,6 +5,7 @@ RSpec.describe Chessboard do
   include Boards
 
   subject(:board) { described_class.new }
+  # TODO stub capture board in all methods that don't need it
 
   describe ".notation_to_indices" do
     it 'translates a1 to [0, 0]' do
@@ -77,7 +78,26 @@ RSpec.describe Chessboard do
     end
   end
 
+  describe ".opponent_colour" do
+    context 'when supplied :white' do
+      it 'returns :black' do
+        expect(described_class.opponent_colour(:white)).to eq(:black)
+      end
+    end
+
+    context 'when supplied :black' do
+      it 'returns white' do
+        expect(described_class.opponent_colour(:black)).to eq(:white)
+      end
+    end
+  end
+
   describe "#move" do
+    before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
     describe 'pawn' do
       it 'moves a white pawn forward by providing chess notation' do
         pawn = board.board[1][4]
@@ -330,7 +350,23 @@ RSpec.describe Chessboard do
           end
         end
 
-        context 'when it is legal' do
+        context 'when opponents first move was a step forward' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][7] = King.new(:black, board.board, [7, 4])
+            board.board[0][7] = King.new(:white, board.board, [0, 4])
+            board.board[6][3] = Pawn.new(:black, board.board, [6, 3])
+            board.board[5][4] = Pawn.new(:black, board.board, [1, 4])
+            board.move('Kg1', :white)
+            board.move('d6', :black)
+          end
+
+          it 'en passant is not possible' do
+            expect(board.move('exd7', :white)).to eq('Invalid move')
+          end
+        end
+
+        context 'when it is legal as white' do
           before do
             board.move('e4', :white)
             board.move('c5', :black)
@@ -347,6 +383,27 @@ RSpec.describe Chessboard do
 
           it 'removes the captured piece from the board' do
             expect(board.board[4][3]).to be_nil
+          end
+        end
+
+        context 'when it is legal by black' do
+          before do
+            board.move('e4', :white)
+            board.move('c5', :black)
+            board.move('f4', :white)
+            board.move('c4', :black)
+            board.move('d4', :white)
+            board.move('cxd3', :black)
+          end
+
+          it 'is recorded with e.p.' do
+            expect(board.moves).to eq([
+              ['e4', 'c5'], ['f4', 'c4'], ['d4', 'cxd3 e.p.']
+            ])
+          end
+
+          it 'removes the captured piece from the board' do
+            expect(board.board[3][3]).to be_nil
           end
         end
       end
@@ -906,6 +963,11 @@ RSpec.describe Chessboard do
 
   describe "#under_check?" do
     before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
+    before do
       board.instance_variable_set(:@board, empty_board)
     end
 
@@ -1004,6 +1066,11 @@ RSpec.describe Chessboard do
 
   describe "#legal moves" do
     before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
+    before do
       board.instance_variable_set(:@board, empty_board)
       board.board[6][1] = Knight.new(:black, board.board)
       board.board[6][4] = King.new(:black, board.board, [7, 4])
@@ -1041,6 +1108,11 @@ RSpec.describe Chessboard do
   end
 
   describe "#has_moves" do
+    before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
     context 'start of game' do
       it 'returns true for both colour' do
         expect(board.has_moves?(:white)).to be true
@@ -1087,6 +1159,11 @@ RSpec.describe Chessboard do
   end
 
   describe "#checkmate?" do
+    before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
     context 'black is checkmated' do
       before do
         board.instance_variable_set(:@board, empty_board)
@@ -1113,6 +1190,79 @@ RSpec.describe Chessboard do
 
       it 'returns false' do
         expect(board).to_not be_checkmate(:black)
+      end
+    end
+  end
+
+  describe "#moves_since_capture_or_pawn_move" do
+    before do
+      # stub time consuming method
+      allow(board).to receive(:capture_board)
+    end
+
+    it 'is incremented after a non-pawn move' do
+      expect do
+        board.move('Nc3', :white)
+        board.move('Nc6', :black)
+      end.to change{ board.moves_since_capture_or_pawn_move }.from(0).to(1)
+
+      expect do
+        board.move('Nf3', :white)
+        board.move('Nf6', :black)
+      end.to change{ board.moves_since_capture_or_pawn_move }.from(1).to(2)
+    end
+
+    it 'is reset to zero after a pawn move' do
+      board.move('Nc3', :white)
+      board.move('Nc6', :black)
+
+      expect do
+        board.move('e4', :white)
+        board.move('e5', :black)
+      end.to change{ board.moves_since_capture_or_pawn_move }.from(1).to(0)
+    end
+
+    it 'is reset to zero afer a capture' do
+      board.move('Nc3', :white)
+      board.move('Nf6', :black)
+
+      expect do
+        board.move('Nd5', :white)
+        board.move('Nxd5', :black)
+      end.to change{ board.moves_since_capture_or_pawn_move }.from(1).to(0)
+    end
+  end
+
+  describe "#nfold_repetition?" do
+    before do
+      board.instance_variable_set(:@board, empty_board)
+      board.board[1][0] = Pawn.new(:white, board.board, [1, 0])
+      board.board[6][0] = Pawn.new(:black, board.board, [6, 0])
+      board.board[2][4] = King.new(:white, board.board, [0, 4])
+      board.board[4][4] = King.new(:black, board.board, [7, 4])
+    end
+
+    context 'when n is 3' do
+      it 'true when current situation appeared 2 or more times in the past' do
+        board.send(:capture_board, :black)
+        2.times do
+          board.move('Kf3', :white)
+          board.move('Kf5', :black)
+          board.move('Ke3', :white)
+          board.move('Ke5', :black)
+        end
+
+        expect(board).to be_nfold_repetition(3)
+      end
+
+      it 'false when current situation appeared less than 2 times in past' do
+        board.send(:capture_board, :black)
+        board.move('Kf3', :white)
+        board.move('Kf5', :black)
+        board.move('Ke3', :white)
+        board.move('Ke5', :black)
+
+        expect(board).to_not be_nfold_repetition(3)
       end
     end
   end
