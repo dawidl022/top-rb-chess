@@ -214,6 +214,42 @@ RSpec.describe Chessboard do
             end
           end
 
+          context 'when piece is captured during promotion' do
+            before do
+              board.instance_variable_set(:@board, empty_board)
+              board.board[7][2] = Knight.new(:black, board.board)
+              board.board[7][5] = King.new(:black, board.board, [7, 4])
+              board.board[6][3] = Pawn.new(:white, board.board, [1, 3])
+              board.board[6][5] = Pawn.new(:white, board.board, [1, 5])
+              board.board[5][2] = King.new(:white, board.board, [0, 4])
+            end
+
+            context 'when not given promoting piece' do
+              it 'returns a message giving possible options' do
+                expect(board.move('dxc8', :white)).to eq(
+                  'Specify a piece to promote to: dxc8Q, dxc8R, dxc8B or dxc8N'
+                )
+              end
+            end
+
+            context 'when given promoting piece' do
+              it 'captures and promotes' do
+                pawn = board.board[6][3]
+                board.move('dxc8Q', :white)
+                expect(pawn.position).to be_nil
+                expect(board.board[7][2]).to be_a(Queen)
+                expect(board.board[7][2].colour).to eq(:white)
+                expect(board.board[6][3]).to be_nil
+              end
+            end
+
+            context 'when given invalid starting file' do
+              it 'returns a message' do
+                expect(board.move('fxc8Q', :white)).to eq('Illegal move')
+              end
+            end
+          end
+
           context 'when given an invalid piece to promote to' do
             it 'returns a message' do
               pawn = board.board[6][4]
@@ -238,10 +274,29 @@ RSpec.describe Chessboard do
           end
 
           it 'returns a message giving possible options' do
-            pawn = board.board[6][4]
             expect(board.move('e8', :white)).to eq(
               'Specify a piece to promote to: e8Q, e8R, e8B or e8N'
             )
+          end
+        end
+
+        context 'when black pawn is promoted' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][5] = King.new(:black, board.board, [7, 4])
+            board.board[3][5] = Knight.new(:white, board.board)
+            board.board[3][6] = King.new(:white, board.board, [0, 4])
+            board.board[1][2] = Pawn.new(:black, board.board, [6, 2])
+            board.move('Ne2', :white)
+          end
+
+          it 'promotes to given piece' do
+            pawn = board.board[1][2]
+            board.move('c1Q', :black)
+            expect(pawn.position).to be_nil
+            expect(board.board[0][2]).to be_a(Queen)
+            expect(board.board[0][2].colour).to eq(:black)
+            expect(board.board[1][2]).to be_nil
           end
         end
       end

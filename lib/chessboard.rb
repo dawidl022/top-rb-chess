@@ -39,6 +39,10 @@ class Chessboard
     file + rank
   end
 
+  def self.opponent_colour(colour)
+    colour == :white ? :black : :white
+  end
+
   def initialize
     @board = starting_board
     @moves = []
@@ -181,23 +185,32 @@ class Chessboard
   end
 
   def promote_pawn(notation, colour)
-    target = self.class.notation_to_indices(notation[0, 2])
-    rank, file = target
+    pawn_rank = colour == :white ? 6 : 1
 
-    pawn = @board[rank - 1][file]
+    if notation.length >= 4
+      target = self.class.notation_to_indices(notation[2, 2])
+      target_rank, target_file = target
+      pawn_file = FILES.find_index(notation[0].to_sym)
+    else
+      target = self.class.notation_to_indices(notation[0, 2])
+      target_rank = target[0]
+      pawn_file = target_file = target[1]
+    end
+
+    pawn = @board[pawn_rank][pawn_file]
 
     return 'Illegal move' unless legal_moves(pawn).include?(target)
-    if notation.length == 2
+
+    if notation.length == 2 || notation.length == 4
       return "Specify a piece to promote to: #{notation}Q, #{notation}R, " \
         "#{notation}B or #{notation}N"
     end
 
-    piece_class = (PIECES.filter { |letter, piece| letter != :K })[notation[2].to_sym]
+    piece_class = (PIECES.filter { |letter, piece| letter != :K })[notation[-1].to_sym]
     return 'Invalid promotion piece' unless piece_class
 
-    @board[rank][file] = piece_class.new(colour, @board)
-
-    @board[rank - 1][file] = nil
+    @board[target_rank][target_file] = piece_class.new(colour, @board)
+    @board[pawn_rank][pawn_file] = nil
 
     true
   end
@@ -343,7 +356,7 @@ class Chessboard
   end
 
   def pawn_promotion_notation?(notation)
-    notation =~ /[a-h]8[QRBN]?/
+    notation =~ /^(?:[a-h]x)?[a-h][18][QRBNK]?$/
   end
 
   def lowercase?(string)

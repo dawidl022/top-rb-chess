@@ -23,12 +23,18 @@ class ChessUI
       whites_move = !whites_move
 
       if @chessboard.checkmate?(player.colour)
-        puts "Checkmate!"
+        puts "Checkmate! " \
+          "#{Chessboard.opponent_colour(player.colour).to_s.capitalize} wins."
         break
       end
 
       if @chessboard.under_check?(player.colour)
-        puts "Check!"
+        puts 'Check!'
+      end
+
+      unless @chessboard.has_moves?(player.colour)
+        puts 'Stalemate.'
+        break
       end
 
       until (result = @chessboard.move(player.move, player.colour)).equal?(true)
