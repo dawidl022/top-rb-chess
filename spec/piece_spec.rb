@@ -226,9 +226,10 @@ RSpec.describe Pawn do
             board[4][4] = white_pawn
 
             black_pawn = board[6][3]
-            black_pawn.valid_moves
 
             board[4][3] = black_pawn
+            # mock chessboard's behaviour
+            black_pawn.first_move_just_made = true
             board[6][3] = nil
           end
 
@@ -248,9 +249,9 @@ RSpec.describe Pawn do
             board[4][4] = white_pawn
 
             black_pawn = board[6][5]
-            black_pawn.valid_moves
 
             board[4][5] = black_pawn
+            black_pawn.first_move_just_made = true
             board[6][5] = nil
           end
 
@@ -270,13 +271,13 @@ RSpec.describe Pawn do
             board[4][4] = white_pawn
 
             black_pawn = board[6][5]
-            black_pawn.valid_moves
 
             board[5][3] = black_pawn
+            black_pawn.first_move_just_made = true
             board[6][3] = nil
 
-            black_pawn.valid_moves
             board[4][3] = black_pawn
+            black_pawn.first_move_just_made = false
             board[5][3] = nil
           end
 
@@ -443,9 +444,9 @@ RSpec.describe Pawn do
             board[3][4] = black_pawn
 
             white_pawn = board[1][3]
-            white_pawn.valid_moves
 
             board[3][3] = white_pawn
+            white_pawn.first_move_just_made = true
             board[1][3] = nil
           end
 
@@ -465,9 +466,10 @@ RSpec.describe Pawn do
             board[3][4] = black_pawn
 
             white_pawn = board[1][5]
-            white_pawn.valid_moves
 
             board[3][5] = white_pawn
+            white_pawn.first_move_just_made = true
+
             board[1][5] = nil
           end
 

@@ -43,8 +43,6 @@ class Pawn < Piece
   end
 
   def valid_moves(last_opponent_move = nil)
-    # TODO: check for check edge case, filter set by calling checking for check
-    # after making each valid move
     @rank, @file = position
 
     # white pawns ascend ranks, black pawns descend ranks
@@ -138,7 +136,6 @@ class Bishop < Piece
   end
 
   def valid_moves
-    # TODO include check each move to see if check exists, if so filter it out
     @rank, @file = position
 
     diagonal_moves
@@ -154,7 +151,6 @@ class Rook < Piece
   end
 
   def valid_moves
-    # TODO include check each move to see if check exists, if so filter it out
     @rank, @file = position
 
     # castling logic
@@ -174,7 +170,6 @@ class Queen < Piece
   end
 
   def valid_moves
-    # TODO include check each move to see if check exists, if so filter it out
     @rank, @file = position
     moves = Set[]
 
@@ -219,7 +214,6 @@ class King < Piece
   def castling_moves
     moves = Set[]
 
-    # TODO the board should check if a castling square is under check
     moves.add([@rank, 6]) if castle_kingside?
     moves.add([@rank, 2]) if castle_queenside?
 

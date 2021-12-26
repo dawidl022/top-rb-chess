@@ -259,6 +259,22 @@ RSpec.describe Chessboard do
       end
 
       context 'en passant' do
+        context 'when opponents pawn first move was a capture' do
+          before do
+            board.board[6][4] = nil
+            board.board[4][4] = Pawn.new(:white, board.board, [1, 4])
+            board.board[5][5] = Pawn.new(:white, board.board, [1, 5])
+            board.board[1][4] = nil
+            board.board[1][5] = nil
+            board.move('e6', :white)
+            board.move('dxe6', :black)
+          end
+
+          it 'en passant is not possible' do
+            expect(board.move('fxe7', :white)).to eq('Invalid move')
+          end
+        end
+
         it 'is recorded with e.p.' do
           expect do
             board.move('e4', :white)

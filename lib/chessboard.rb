@@ -158,7 +158,9 @@ class Chessboard
         @board[target[0]][target[1]] = piece
         @board[rank - diff][file] = nil
 
-        if piece.first_move_just_made.nil?
+        if notation[1] == 'x'
+          piece.first_move_just_made = false
+        elsif piece.first_move_just_made.nil?
           piece.first_move_just_made = true
         else
           piece.first_move_just_made = false
