@@ -101,6 +101,10 @@ class Chessboard
     false
   end
 
+  def checkmate?(colour)
+    under_check?(colour) && !has_moves?(colour)
+  end
+
   private
 
   def evaluate_move(notation, colour)
@@ -201,6 +205,8 @@ class Chessboard
     target = evaluate_target(notation)
     return target if target.is_a?(String)
     piece_class = PIECES[notation[0].to_sym]
+
+    notation = notation.gsub('x', '')
 
     pieces = find_all_pieces(piece_class, colour)
       .filter do |piece|

@@ -404,6 +404,31 @@ RSpec.describe Chessboard do
         end
       end
 
+      context 'capture' do
+        before do
+          board.move('e4', :white)
+          board.move('e5', :black)
+          board.move('Bb5', :white)
+          board.move('a6', :black)
+        end
+
+        it 'captures the piece, but is not required to include the x' do
+          bishop = board.board[4][1]
+          board.move('Bd7', :white)
+          expect(bishop.position).to eq([6, 3])
+          expect(board.board[4][1]).to be_nil
+          expect(board.board[6][3]).to be bishop
+        end
+
+        it 'captures the piece with the x' do
+          bishop = board.board[4][1]
+          board.move('Bxd7', :white)
+          expect(bishop.position).to eq([6, 3])
+          expect(board.board[4][1]).to be_nil
+          expect(board.board[6][3]).to be bishop
+        end
+      end
+
       context 'invalid' do
         context 'no knight can access that square' do
           it 'returns message' do
@@ -994,6 +1019,37 @@ RSpec.describe Chessboard do
 
       it 'but black is not under check' do
         expect(board).to_not be_under_check(:black)
+      end
+    end
+  end
+
+  describe "#checkmate?" do
+    context 'black is checkmated' do
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[7][7] = King.new(:black, board.board, [7, 4])
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.board[5][6] = Queen.new(:white, board.board)
+        board.board[3][7] = Rook.new(:white, board.board)
+        board.board[2][0] = Pawn.new(:black, board.board, [6, 0])
+      end
+
+      it 'returns true' do
+        expect(board).to be_checkmate(:black)
+      end
+    end
+
+    context 'black is not checkmated' do
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[7][7] = King.new(:black, board.board, [7, 4])
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.board[5][6] = Queen.new(:white, board.board)
+        board.board[2][0] = Pawn.new(:black, board.board, [6, 0])
+      end
+
+      it 'returns false' do
+        expect(board).to_not be_checkmate(:black)
       end
     end
   end
