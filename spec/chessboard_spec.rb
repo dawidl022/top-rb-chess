@@ -505,6 +505,257 @@ RSpec.describe Chessboard do
       end
     end
 
+    context 'castling' do
+      shared_examples_for 'white castles kingside' do
+        it 'is done' do
+          king = board.board[0][4]
+          rook = board.board[0][7]
+          board.move('0-0', :white)
+
+          expect(king.position).to eq([0, 6])
+          expect(rook.position).to eq([0, 5])
+
+          expect(board.board[0][6]).to be king
+          expect(board.board[0][5]).to be rook
+          expect(board.board[0][4]).to be_nil
+          expect(board.board[0][7]).to be_nil
+        end
+      end
+
+      context 'castling kingside' do
+        context 'when it is valid' do
+          before do
+            board.board[0][5] = nil
+            board.board[0][6] = nil
+
+            board.board[7][5] = nil
+            board.board[7][6] = nil
+          end
+
+          it_behaves_like 'white castles kingside'
+
+          it 'black castles' do
+            king = board.board[7][4]
+            rook = board.board[7][7]
+            board.moves << []
+            board.move('0-0', :black)
+
+            expect(king.position).to eq([7, 6])
+            expect(rook.position).to eq([7, 5])
+
+            expect(board.board[7][6]).to be king
+            expect(board.board[7][5]).to be rook
+            expect(board.board[7][4]).to be_nil
+            expect(board.board[7][7]).to be_nil
+          end
+        end
+
+        context 'when the king is not in its starting position' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][0] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[4][3] = Bishop.new(:white, board.board)
+            board.board[1][4] = King.new(:white, board.board, [0, 4])
+            board.board[1][7] = Rook.new(:white, board.board, [0, 7])
+          end
+
+          it 'return message' do
+            expect(board.move('0-0', :white)).to eq('Invalid move')
+          end
+        end
+
+        context 'when the king has already moved' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][0] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[4][3] = Bishop.new(:white, board.board)
+            board.board[1][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+            board.move('Ke1', :white)
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'when the rook is not there' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][0] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[4][3] = Bishop.new(:white, board.board)
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Invalid move')
+          end
+        end
+
+        context 'when the rook has already moved' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][0] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[4][3] = Bishop.new(:white, board.board)
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[1][7] = Rook.new(:white, board.board, [0, 7])
+            board.move('Rh1', :white)
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'when rook is being attacked' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[7][0] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+          end
+
+          it_behaves_like 'white castles kingside'
+        end
+
+        context 'when king is under check' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[3][1] = Bishop.new(:black, board.board)
+            board.board[5][5] = King.new(:black, board.board, [7, 4])
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'when king would have to move through check' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[3][2] = Bishop.new(:black, board.board)
+          board.board[5][5] = King.new(:black, board.board, [7, 4])
+          board.board[0][4] = King.new(:white, board.board, [0, 4])
+          board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+        end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'attacking piece cannot move but attacks castling square' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[5][1] = King.new(:black, board.board, [7, 4])
+            board.board[4][1] = Bishop.new(:black, board.board)
+
+            board.board[0][1] = Rook.new(:white, board.board)
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'when ending square is under check' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[5][1] = King.new(:black, board.board, [7, 4])
+            board.board[4][2] = Bishop.new(:black, board.board)
+
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][7] = Rook.new(:white, board.board, [0, 7])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0', :white)).to eq('Illegal move')
+          end
+        end
+      end
+
+      context 'castling queenside' do
+        context 'when it is valid' do
+          before do
+            board.board[0][1] = nil
+            board.board[0][2] = nil
+            board.board[0][3] = nil
+
+            board.board[7][1] = nil
+            board.board[7][2] = nil
+            board.board[7][3] = nil
+          end
+
+          it 'white castles queenside' do
+            king = board.board[0][4]
+            rook = board.board[0][0]
+            board.move('0-0-0', :white)
+
+            expect(king.position).to eq([0, 2])
+            expect(rook.position).to eq([0, 3])
+
+            expect(board.board[0][2]).to be king
+            expect(board.board[0][3]).to be rook
+            expect(board.board[0][4]).to be_nil
+            expect(board.board[0][0]).to be_nil
+          end
+
+          it 'black castles queenside' do
+            king = board.board[7][4]
+            rook = board.board[7][0]
+            board.moves << []
+            board.move('0-0-0', :black)
+
+            expect(king.position).to eq([7, 2])
+            expect(rook.position).to eq([7, 3])
+
+            expect(board.board[7][2]).to be king
+            expect(board.board[7][3]).to be rook
+            expect(board.board[7][4]).to be_nil
+            expect(board.board[7][0]).to be_nil
+          end
+        end
+
+        context 'when king is under check' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[3][6] = King.new(:black, board.board, [7, 4])
+            board.board[2][6] = Bishop.new(:black, board.board)
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][0] = Rook.new(:white, board.board, [0, 0])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0-0', :white)).to eq('Illegal move')
+          end
+        end
+
+        context 'when king would have to move through check' do
+          before do
+            board.instance_variable_set(:@board, empty_board)
+            board.board[3][6] = King.new(:black, board.board, [7, 4])
+            board.board[2][5] = Bishop.new(:black, board.board)
+            board.board[0][4] = King.new(:white, board.board, [0, 4])
+            board.board[0][0] = Rook.new(:white, board.board, [0, 0])
+          end
+
+          it 'returns message' do
+            expect(board.move('0-0-0', :white)).to eq('Illegal move')
+          end
+        end
+      end
+    end
+
+
     context 'completely invalid notation' do
       it 'returns message' do
         expect(board.move('Ad4', :white)).to eq('Invalid move')
@@ -514,8 +765,38 @@ RSpec.describe Chessboard do
     end
 
     context 'when checking opponent' do
-      it 'places a + in the notation'
-      it 'returns a message'
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[3][6] = King.new(:black, board.board, [7, 4])
+        board.board[1][6] = Bishop.new(:black, board.board)
+        board.board[0][4] = King.new(:white, board.board, [0, 4])
+        board.board[0][0] = Rook.new(:white, board.board, [0, 0])
+      end
+      it 'places a + in the notation' do
+        expect do
+          board.move('Kd1', :white)
+          board.move('Bf3', :black)
+        end.to change { board.moves }.from([]).to([
+          ['Kd1', 'Bf3+']
+        ])
+      end
+    end
+
+    context 'when checkmating the opponent' do
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[7][7] = King.new(:black, board.board, [7, 4])
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.board[5][6] = Queen.new(:white, board.board)
+        board.board[3][5] = Rook.new(:white, board.board)
+        board.board[2][0] = Pawn.new(:black, board.board, [6, 0])
+      end
+
+      it 'places a # in the notation' do
+        expect { board.move('Rh4', :white) }.to change { board.moves }.to([
+          ['Rh4#']
+        ])
+      end
     end
   end
 
@@ -596,6 +877,25 @@ RSpec.describe Chessboard do
 
       it_behaves_like 'black checked'
     end
+
+    context 'when attacking piece is pinned' do
+      before do
+        board.board[6][3] = Bishop.new(:black, board.board)
+        board.board[5][1] = King.new(:black, board.board, [7, 4])
+        board.board[0][2] = Rook.new(:white, board.board)
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.move('Rb1', :white)
+        board.move('Bb5', :black)
+      end
+
+      it 'white should be under check' do
+        expect(board).to be_under_check(:white)
+      end
+
+      it 'both checks should be recorded' do
+        expect(board.moves).to eq([['Rb1+', 'Bb5+']])
+      end
+    end
   end
 
   describe "#legal moves" do
@@ -633,6 +933,52 @@ RSpec.describe Chessboard do
     it 'does not mutate the chessboard' do
       king = board.board[6][4]
       expect{ board.legal_moves(king) }.to_not change { board.board }
+    end
+  end
+
+  describe "#has_moves" do
+    context 'start of game' do
+      it 'returns true for both colour' do
+        expect(board.has_moves?(:white)).to be true
+        expect(board.has_moves?(:black)).to be true
+      end
+    end
+
+    context 'checkmate' do
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[7][7] = King.new(:black, board.board, [7, 4])
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.board[5][6] = Queen.new(:white, board.board)
+        board.board[3][7] = Rook.new(:white, board.board)
+        board.board[2][0] = Pawn.new(:black, board.board, [6, 0])
+      end
+
+      it 'returns false for black' do
+        expect(board.has_moves?(:black)).to be false
+      end
+
+      it 'returns true for white' do
+        expect(board.has_moves?(:white)).to be true
+      end
+    end
+
+    context 'stalemate' do
+      before do
+        board.instance_variable_set(:@board, empty_board)
+        board.board[7][7] = King.new(:black, board.board, [7, 4])
+        board.board[0][5] = King.new(:white, board.board, [0, 4])
+        board.board[5][6] = Queen.new(:white, board.board)
+        board.board[3][5] = Rook.new(:white, board.board)
+      end
+
+      it 'returns false for black' do
+        expect(board.has_moves?(:black)).to be false
+      end
+
+      it 'but black is not under check' do
+        expect(board).to_not be_under_check(:black)
+      end
     end
   end
 end

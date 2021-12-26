@@ -47,14 +47,22 @@ class Chessboard
   def move(notation, colour)
     result = evaluate_move(notation, colour)
 
-    record_move(notation + ' e.p.', colour) if result == :ep
-    # TODO check for check(mate) and return that instead of result
     record_move(notation, colour) if result.equal?(true)
+
+    if result == :ep
+      record_move(notation + ' e.p.', colour)
+      result = true
+    end
 
     result
   end
 
   def has_moves?(colour)
+    find_all_pieces(colour).each do |piece|
+      return true if legal_moves(piece).length >= 1
+    end
+
+    false
   end
 
   def legal_moves(piece)
@@ -96,6 +104,8 @@ class Chessboard
   private
 
   def evaluate_move(notation, colour)
+    return castle_kingside(colour) if notation == '0-0' || notation == 'O-O'
+    return castle_queenside(colour) if notation == '0-0-0' || notation == 'O-O-O'
     return promote_pawn(notation, colour) if pawn_promotion_notation?(notation)
     return move_pawn(notation, colour) if pawn_notation?(notation)
     return move_piece(notation, colour) if PIECES.keys.include?(notation[0].to_sym)
@@ -103,9 +113,13 @@ class Chessboard
   end
 
   def record_move(notation, colour)
-    # TODO
-    # notation += '#' if under_check(opponent_colour) && !has_moves?(opponent_colour)
-    # notation += '+' if under_check(opponent_colour)
+    opponent_colour = colour == :white ? :black : :white
+    if under_check?(opponent_colour) && !has_moves?(opponent_colour)
+      notation += '#'
+    elsif under_check?(opponent_colour)
+      notation += '+'
+    end
+
     if colour == :white
       @moves << [notation]
     else
@@ -143,6 +157,12 @@ class Chessboard
 
         @board[target[0]][target[1]] = piece
         @board[rank - diff][file] = nil
+
+        if piece.first_move_just_made.nil?
+          piece.first_move_just_made = true
+        else
+          piece.first_move_just_made = false
+        end
 
         return en_passant ? :ep : true
       else
@@ -210,12 +230,49 @@ class Chessboard
     true
   end
 
+  def castle(colour, rook_start, op)
+    rank = colour == :white ? 0 : 7
+    square_to_check = [rank, 4.send(op, 1)]
+    finishing_square = [rank, 4.send(op, 2)]
+
+    king = @board[rank][4]
+    rook = @board[rank][rook_start]
+    return 'Invalid move' unless king.is_a?(King) && rook.is_a?(Rook)
+
+    opponent_colour = colour == :white ? :black : :white
+
+    return 'Illegal move' if !legal_moves(king).include?(finishing_square) \
+      || under_check?(colour) \
+      || square_attacked?(square_to_check, opponent_colour)
+
+    board[rank][finishing_square[1]] = king
+    board[rank][square_to_check[1]] = rook
+    board[rank][4] = nil
+    board[rank][rook_start] = nil
+
+    true
+  end
+
+  def castle_kingside(colour)
+    castle(colour, 7, :+)
+  end
+
+  def castle_queenside(colour)
+    castle(colour, 0, :-)
+  end
+
   def evaluate_target(notation)
     begin
       self.class.notation_to_indices(notation[-2, 2])
     rescue ArgumentError => error
       error.message
     end
+  end
+
+  def square_attacked?(square, attacker_colour)
+    find_all_pieces(attacker_colour).filter do |piece|
+      piece.valid_moves.include?(square)
+    end.length >= 1
   end
 
   def find_piece(piece, colour)

@@ -34,11 +34,12 @@ class Piece
 end
 
 class Pawn < Piece
-  attr_reader :first_move
+  attr_accessor :first_move_just_made
 
   def initialize(colour, board, starting_square)
     super
     @symbol = colour == :white ? '♙' : '♟︎'
+    @first_move_just_made = nil
   end
 
   def valid_moves(last_opponent_move = nil)
@@ -89,7 +90,7 @@ class Pawn < Piece
     piece_to_left = @board[@rank][@file - 1]
 
     last_opponent_move && piece_to_left && piece_to_left.is_a?(Pawn) \
-    && piece_to_left.first_move \
+    && piece_to_left.first_move_just_made \
     && Chessboard.notation_to_indices(
       last_opponent_move) == [@rank, @file - 1]
   end
@@ -98,7 +99,7 @@ class Pawn < Piece
     piece_to_right = @board[@rank][@file + 1]
 
     last_opponent_move && piece_to_right && piece_to_right.is_a?(Pawn) \
-    && piece_to_right.first_move \
+    && piece_to_right.first_move_just_made \
     && Chessboard.notation_to_indices(
       last_opponent_move) == [@rank, @file + 1]
   end
@@ -200,7 +201,7 @@ class King < Piece
         next if rank_diff == 0 && file_diff == 0
 
         file = @file + file_diff
-        next if file < 0 || rank > 7
+        next if file < 0 || file > 7
 
         if !@board[rank][file] || @board[rank][file].colour != @colour
           moves.add([rank, file])
