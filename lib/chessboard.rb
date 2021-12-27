@@ -43,6 +43,10 @@ class Chessboard
     colour == :white ? :black : :white
   end
 
+  def self.parse_pgn(pgn_string)
+    # TODO PGN PARSING: [0-9]+.(\S+ (?:\S+)?)
+  end
+
   def initialize
     @board = starting_board
     @moves = []
@@ -80,6 +84,7 @@ class Chessboard
   end
 
   def move(notation, colour)
+    notation = notation.gsub(/[+#]$/, '')
     result = evaluate_move(notation, colour)
 
     record_move(notation, colour) if result.equal?(true)
@@ -187,6 +192,7 @@ class Chessboard
     end
 
     diff = colour == :white ? -1 : 1
+    rank += diff
 
     while rank >= 0 && rank <= 7
       piece = @board[rank][file]

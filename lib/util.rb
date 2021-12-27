@@ -4,5 +4,4 @@ end
 
 def clear_screen(scroll: false)
   puts "\e[2J" + (scroll ? '' : "\e[3J") + "\e[H"
-  # puts `tput cols`
 end

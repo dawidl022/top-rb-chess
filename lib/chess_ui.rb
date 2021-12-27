@@ -146,6 +146,18 @@ class ChessUI
   end
 
   def format_notation(padding)
-    Array.new(8)
+    # each moves is 18 characters
+    columns = (`tput cols`.to_i - padding) / 18
+    number_of_rows = [8, (@chessboard.moves.length / columns).ceil].max
+    rows = Array.new(number_of_rows) { String.new }
+
+    @chessboard.moves.each_with_index do |move, index|
+      rows[index % number_of_rows] +=
+        "#{(index + 1).to_s.rjust(3)}. #{move[0].to_s.ljust(7)} "\
+        "#{move[1].to_s.ljust(7)} "
+    end
+
+    # clear redundant trailing whitespace
+    rows.each(&:rstrip!)
   end
 end

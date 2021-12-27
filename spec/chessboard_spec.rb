@@ -137,7 +137,7 @@ RSpec.describe Chessboard do
         it 'cannot move a pawn there due to piece blocking' do
           board.board[3][4] = Knight.new(:black, board.board)
           response = board.move('e4', :white)
-          expect(response).to eq('Invalid move')
+          expect(response).to eq('Illegal move')
         end
 
         it 'no pawn can reach that square' do
@@ -175,7 +175,7 @@ RSpec.describe Chessboard do
       end
 
       context 'capture' do
-        it 'pawn captures another pawn' do
+        it 'white pawn captures another pawn' do
           white_pawn = board.board[1][4]
           board.move('e4', :white)
           board.move('d5', :black)
@@ -183,6 +183,17 @@ RSpec.describe Chessboard do
           expect(white_pawn.position).to eq([4, 3])
           expect(board.board[4][3]).to be white_pawn
           expect(board.board[3][4]).to be_nil
+        end
+
+        it 'black pawn captures another pawn' do
+          black_pawn = board.board[6][4]
+          board.move('e4', :white)
+          board.move('e5', :black)
+          board.move('d4', :white)
+          board.move('exd4', :black)
+          expect(black_pawn.position).to eq([3, 3])
+          expect(board.board[3][3]).to be black_pawn
+          expect(board.board[4][4]).to be_nil
         end
       end
 
@@ -346,7 +357,7 @@ RSpec.describe Chessboard do
           end
 
           it 'en passant is not possible' do
-            expect(board.move('fxe7', :white)).to eq('Invalid move')
+            expect(board.move('fxe7', :white)).to eq('Illegal move')
           end
         end
 
@@ -933,10 +944,20 @@ RSpec.describe Chessboard do
         board.board[0][4] = King.new(:white, board.board, [0, 4])
         board.board[0][0] = Rook.new(:white, board.board, [0, 0])
       end
+
       it 'places a + in the notation' do
         expect do
           board.move('Kd1', :white)
           board.move('Bf3', :black)
+        end.to change { board.moves }.from([]).to([
+          ['Kd1', 'Bf3+']
+        ])
+      end
+
+      it 'works when + is supplied in notation' do
+        expect do
+          board.move('Kd1', :white)
+          board.move('Bf3+', :black)
         end.to change { board.moves }.from([]).to([
           ['Kd1', 'Bf3+']
         ])
@@ -955,6 +976,12 @@ RSpec.describe Chessboard do
 
       it 'places a # in the notation' do
         expect { board.move('Rh4', :white) }.to change { board.moves }.to([
+          ['Rh4#']
+        ])
+      end
+
+      it 'works when # is supplied in the notation' do
+        expect { board.move('Rh4#', :white) }.to change { board.moves }.to([
           ['Rh4#']
         ])
       end
