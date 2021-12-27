@@ -1,5 +1,30 @@
 #!/usr/bin/env ruby
 
 require_relative 'lib/chess_ui'
+require 'optparse'
 
-ChessUI.new.play_game
+options = {}
+
+OptionParser.new do |opts|
+  opts.on '-s', '--scroll',
+    'Allow scrolling back the terminal to see previous board states' do
+    options[:scroll] = true
+  end
+  opts.on '-l', '--labels', 'Display rank and file labels on the chessboard' do
+    options[:labels] = true
+  end
+  opts.on '-g', '--game FILE', 'Load a game from FILE' do |filename|
+    raise NotImplementedError
+  end
+  opts.on '-h', '--help', 'Display help' do
+    puts opts
+
+    help_file = File.open("help.txt")
+    puts help_file.read
+    help_file.close()
+
+    exit
+  end
+end.parse!
+
+ChessUI.new(**options).play_game

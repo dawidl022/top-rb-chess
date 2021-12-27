@@ -4,7 +4,7 @@
 
 [![Run on Repl.it](https://repl.it/badge/github/dawidl022/top-rb-chess)](https://replit.com/@dawidl022/top-rb-chess)
 
-Local usage: `./chess`
+Usage: `./chess [options]`
 
 
 ### About

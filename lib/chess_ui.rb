@@ -3,19 +3,18 @@ require_relative 'chessboard'
 require_relative 'util'
 
 class ChessUI
-  HINTS = false
-  SCROLL = false
-
-  def initialize
+  def initialize(scroll: false, labels: false)
     @white = Player.new(:white)
     @black = Player.new(:black)
     @chessboard = Chessboard.new
+    @labels = labels
+    @scroll = scroll
   end
 
   def play_game
     whites_move = true
     loop do
-      clear_screen(scroll: SCROLL)
+      clear_screen(scroll: @scroll)
       print_board
       put_blank_line
 
@@ -62,7 +61,7 @@ class ChessUI
         end
 
         break if (result = @chessboard.move(input, player.colour)).equal?(true)
-        clear_screen(scroll: SCROLL)
+        clear_screen(scroll: @scroll)
         print_board
         put_blank_line
         puts result
@@ -86,13 +85,13 @@ class ChessUI
     else
       puts 'Make your move to claim/offer a draw'
       until (result = @chessboard.move(player.move, player.colour)).equal?(true)
-        clear_screen(scroll: SCROLL)
+        clear_screen(scroll: @scroll)
         print_board
         put_blank_line
         puts result
       end
 
-      clear_screen(scroll: SCROLL)
+      clear_screen(scroll: @scroll)
       print_board
       put_blank_line
 
@@ -114,10 +113,10 @@ class ChessUI
   end
 
   def print_board
-    board_string = HINTS ? "8 " : ""
+    board_string = @labels ? "8 " : ""
     white_square = true
 
-    notation_rows = format_notation(HINTS ? 20 : 18)
+    notation_rows = format_notation(@labels ? 20 : 18)
 
     @chessboard.board.reverse.each_with_index do |rank, index|
       board_string += "\e[30m"
@@ -133,14 +132,14 @@ class ChessUI
 
       unless index == 7
         board_string += "\n"
-        board_string += "#{7 - index} " if HINTS
+        board_string += "#{7 - index} " if @labels
       end
     end
 
     puts board_string
     print "\e[0m  "
 
-    if HINTS
+    if @labels
       Chessboard::FILES.each { |letter| print letter.to_s  + " " }
       put_blank_line
     end

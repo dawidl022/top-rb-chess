@@ -1,0 +1,14 @@
+--------------------------------------------------------------------------------
+
+CHESS - Two player chess command line game
+
+Moves by each player must be made by entering a valid chess notation.
+(See https://en.wikipedia.org/wiki/Algebraic_notation_(chess) for a detailed overview)
+
+Special commands:
+These can be typed in instead of a valid chess notation move.
+
+resign - resign the game
+draw - claim draw if applicable, otherwise offer a draw to the other player
+save FILE - save the current game state to FILE
+quit - exit the game
