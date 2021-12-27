@@ -3,12 +3,16 @@ require_relative 'chessboard'
 require_relative 'util'
 
 class ChessUI
-  def initialize(scroll: false, labels: false, pgn: nil)
+  def initialize(scroll: false, labels: false, pgn: nil, replay: false)
     @white = Player.new(:white)
     @black = Player.new(:black)
-    @chessboard = pgn ? Chessboard.from_pgn(pgn) : Chessboard.new
     @labels = labels
     @scroll = scroll
+    if pgn && replay
+      @chessboard = replay_game(pgn, replay)
+    else
+      @chessboard = pgn ? Chessboard.from_pgn(pgn) : Chessboard.new
+    end
   end
 
   def play_game
@@ -112,13 +116,13 @@ class ChessUI
     end
   end
 
-  def print_board
+  def print_board(chessboard = @chessboard)
     board_string = @labels ? "8 " : ""
     white_square = true
 
-    notation_rows = format_notation(@labels ? 20 : 18)
+    notation_rows = format_notation(@labels ? 20 : 18, chessboard)
 
-    @chessboard.board.reverse.each_with_index do |rank, index|
+    chessboard.board.reverse.each_with_index do |rank, index|
       board_string += "\e[30m"
       board_string += rank.map do |piece|
         colour = white_square ? "\e[47m" : "\e[48;5;35m"
@@ -155,12 +159,12 @@ class ChessUI
     end
   end
 
-  def format_notation(padding)
+  def format_notation(padding, chessboard = @chessboard)
     columns = (`tput cols`.to_i - padding) / 21
-    number_of_rows = [8, (@chessboard.moves.length / columns.to_f).ceil].max
+    number_of_rows = [8, (chessboard.moves.length / columns.to_f).ceil].max
     rows = Array.new(number_of_rows) { String.new }
 
-    @chessboard.moves.each_with_index do |move, index|
+    chessboard.moves.each_with_index do |move, index|
       rows[index % number_of_rows] +=
         "#{(index + 1).to_s.rjust(3)}. #{move[0].to_s.ljust(7)} "\
         "#{move[1].to_s.ljust(7)} "
@@ -185,5 +189,25 @@ class ChessUI
     else
       puts "Game saved successfully to '#{filename}'"
     end
+  end
+
+  def replay_game(pgn, delay)
+    board = Chessboard.new
+    moves = Chessboard.parse_pgn(pgn)
+
+
+    moves.each do |move|
+      move.each_with_index do |sub_move, index|
+        unless board.move(sub_move, index == 0 ? :white : :black).equal?(true)
+          raise ArgumentError, 'Incompatible PGN notation supplied'
+        end
+        clear_screen(scroll: @scroll)
+        print_board(board)
+        put_blank_line
+        sleep delay
+      end
+    end
+
+    board
   end
 end

@@ -10,9 +10,11 @@ OptionParser.new do |opts|
     'Allow scrolling back the terminal to see previous board states' do
     options[:scroll] = true
   end
+
   opts.on '-l', '--labels', 'Display rank and file labels on the chessboard' do
     options[:labels] = true
   end
+
   opts.on '-g', '--game FILE', 'Load a game from FILE' do |filename|
     begin
       options[:pgn] = File.read(filename)
@@ -22,10 +24,13 @@ OptionParser.new do |opts|
       puts "Loading game..."
     end
   end
-  opts.on '-r', '--replay FILE [N]',
-  'Replay a game stored in FILE with a N second delay between moves' \
-  do |filename , n|
+
+  opts.on '-r', '--replay N',
+  'Replay the loaded game with a N second delay between moves' \
+  do |n|
+    options[:replay] = n.to_f
   end
+
   opts.on '-h', '--help', 'Display help' do
     puts opts
 
