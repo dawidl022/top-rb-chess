@@ -127,8 +127,8 @@ class Knight < Piece
     [[1, 2], [2, 1], [-1, -2], [-2, -1], [1, -2], [2, -1], [-1, 2], [-2, 1]]
     .map do |difference|
       [current_position[0] + difference[0], current_position[1] + difference[1]]
-    end.filter(&on_chessboard)  # don't allow knight to leave chessboard
-    .filter do |(rank, file)|
+    end.select(&on_chessboard)  # don't allow knight to leave chessboard
+    .select do |(rank, file)|
       !@board[rank][file] || @board[rank][file].colour != @colour
     end)
   end

@@ -58,7 +58,7 @@ class Chessboard
   def nfold_repetition?(n)
     current_board = @board_captures[-1]
 
-    @board_captures.filter { |board| board == current_board }.length >= n
+    @board_captures.select { |board| board == current_board }.length >= n
   end
 
   # Only check for the obvious dead positions, i.e. king vs king, king & bishop
@@ -113,7 +113,7 @@ class Chessboard
       valid_moves = piece.valid_moves
     end
 
-    Set.new(valid_moves.filter do |(move_rank, move_file)|
+    Set.new(valid_moves.select do |(move_rank, move_file)|
       cloned_chessboard = Chessboard.new
       cloned_board = clone_board
 
@@ -243,7 +243,7 @@ class Chessboard
         "#{notation}B or #{notation}N"
     end
 
-    piece_class = (PIECES.filter { |letter, piece| letter != :K })[notation[-1].to_sym]
+    piece_class = (PIECES.select { |letter, piece| letter != :K })[notation[-1].to_sym]
     return 'Invalid promotion piece' unless piece_class
 
     @board[target_rank][target_file] = piece_class.new(colour, @board)
@@ -260,7 +260,7 @@ class Chessboard
     notation = notation.gsub('x', '')
 
     pieces = find_all_pieces(piece_class, colour)
-      .filter do |piece|
+      .select do |piece|
         if notation.length == 4
           if FILES.include?(notation[1].to_sym)
             next false unless FILES.find_index(notation[1].to_sym) == piece.position[1]
@@ -331,7 +331,7 @@ class Chessboard
   end
 
   def square_attacked?(square, attacker_colour)
-    find_all_pieces(attacker_colour).filter do |piece|
+    find_all_pieces(attacker_colour).select do |piece|
       piece.valid_moves.include?(square)
     end.length >= 1
   end
