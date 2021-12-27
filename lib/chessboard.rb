@@ -45,9 +45,24 @@ class Chessboard
 
   def self.parse_pgn(pgn_string)
     pgn_string = pgn_string.gsub(/\s*{.*}\s*/, ' ')
-    pgn_string.scan(/[0-9]+.\s*(\S+ (?:\S+)?)/).map do |move|
+    pgn_string.scan(/[0-9]+.\s*(\S+ \S*)/).map do |move|
       move[0].gsub('O', '0').gsub('=', '').split(" ")
     end
+  end
+
+  def self.from_pgn(pgn_string)
+    board = Chessboard.new
+    moves = self.parse_pgn(pgn_string)
+
+    moves.each do |move|
+      move.each_with_index do |sub_move, index|
+        unless board.move(sub_move, index == 0 ? :white : :black).equal?(true)
+          raise ArgumentError, 'Incompatible PGN notation supplied'
+        end
+      end
+    end
+
+    board
   end
 
   def to_pgn

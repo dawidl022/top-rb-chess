@@ -1555,4 +1555,93 @@ RSpec.describe Chessboard do
       ].join(" "))
     end
   end
+
+  describe '.from_pgn' do
+    let(:pgn) do
+      <<~GAME
+        [Event "USA-chJ"]
+        [Site "?"]
+        [Date "1955.??.??"]
+        [Round "?"]
+        [White "Thomason, J."]
+        [Black "Fischer, Robert James"]
+        [Result "0-1"]
+        [WhiteElo ""]
+        [BlackElo ""]
+        [ECO "E91"]
+
+        1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 O-O 6.Bd3 Bg4 7.O-O Nc6 8.Be3 Nd7
+        9.Be2 Bxf3 10.Bxf3 e5 11.d5 Ne7 12.Be2 f5 13.f4 h6 14.Bd3 Kh7 15.Qe2 fxe4
+        16.Nxe4 Nf5 17.Bd2 exf4 18.Bxf4 Ne5 19.Bc2 Nd4 20.Qd2 Nxc4 21.Qf2 Rxf4 22.Qxf4 Ne2+
+        23.Kh1 Nxf4  0-1
+      GAME
+    end
+
+    subject(:board) { described_class.from_pgn(pgn) }
+
+    it 'sets the board to the final position in pgn and sets move history' do
+      # two tests kept under one to increase performance
+      expect(board.board[0][0]).to be_a(Rook)
+        .and(have_attributes(colour: :white))
+      expect(board.board[0][5]).to be_a(Rook)
+        .and(have_attributes(colour: :white))
+      expect(board.board[0][7]).to be_a(King)
+        .and(have_attributes(colour: :white))
+      expect(board.board[1][0]).to be_a(Pawn)
+        .and(have_attributes(colour: :white))
+      expect(board.board[1][1]).to be_a(Pawn)
+        .and(have_attributes(colour: :white))
+      expect(board.board[1][2]).to be_a(Bishop)
+        .and(have_attributes(colour: :white))
+      expect(board.board[1][6]).to be_a(Pawn)
+        .and(have_attributes(colour: :white))
+      expect(board.board[1][7]).to be_a(Pawn)
+        .and(have_attributes(colour: :white))
+      expect(board.board[3][2]).to be_a(Knight)
+        .and(have_attributes(colour: :black))
+      expect(board.board[3][4]).to be_a(Knight)
+        .and(have_attributes(colour: :white))
+      expect(board.board[3][5]).to be_a(Knight)
+        .and(have_attributes(colour: :black))
+      expect(board.board[4][3]).to be_a(Pawn)
+        .and(have_attributes(colour: :white))
+      expect(board.board[5][3]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[5][6]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[5][7]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[6][0]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[6][1]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[6][2]).to be_a(Pawn)
+        .and(have_attributes(colour: :black))
+      expect(board.board[6][6]).to be_a(Bishop)
+        .and(have_attributes(colour: :black))
+      expect(board.board[6][7]).to be_a(King)
+        .and(have_attributes(colour: :black))
+      expect(board.board[7][0]).to be_a(Rook)
+        .and(have_attributes(colour: :black))
+      expect(board.board[7][3]).to be_a(Queen )
+        .and(have_attributes(colour: :black))
+
+      expect(board.moves).to eq([
+        ['d4', 'Nf6'], ['c4', 'g6'], ['Nc3', 'Bg7'], ['e4', 'd6'],
+        ['Nf3', '0-0'], ['Bd3', 'Bg4'], ['0-0', 'Nc6'], ['Be3', 'Nd7'],
+        ['Be2', 'Bxf3'], ['Bxf3', 'e5'], ['d5', 'Ne7'], ['Be2', 'f5'],
+        ['f4', 'h6'], ['Bd3', 'Kh7'], ['Qe2', 'fxe4'], ['Nxe4', 'Nf5'],
+        ['Bd2', 'exf4'], ['Bxf4', 'Ne5'], ['Bc2', 'Nd4'], ['Qd2', 'Nxc4'],
+        ['Qf2', 'Rxf4'], ['Qxf4', 'Ne2+'], ['Kh1', 'Nxf4']
+      ])
+    end
+
+    context 'illegal move in pgn' do
+      it 'raises error with message' do
+        expect { described_class.from_pgn('1. e8 ') }.to raise_error(
+          ArgumentError, 'Incompatible PGN notation supplied'
+        )
+      end
+    end
+  end
 end

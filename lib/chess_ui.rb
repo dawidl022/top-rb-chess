@@ -3,16 +3,16 @@ require_relative 'chessboard'
 require_relative 'util'
 
 class ChessUI
-  def initialize(scroll: false, labels: false)
+  def initialize(scroll: false, labels: false, pgn: nil)
     @white = Player.new(:white)
     @black = Player.new(:black)
-    @chessboard = Chessboard.new
+    @chessboard = pgn ? Chessboard.from_pgn(pgn) : Chessboard.new
     @labels = labels
     @scroll = scroll
   end
 
   def play_game
-    whites_move = true
+    whites_move = !@chessboard.moves[-1] || @chessboard.moves[-1].length == 2
     loop do
       clear_screen(scroll: @scroll)
       print_board
@@ -56,7 +56,7 @@ class ChessUI
         case input
         when 'resign' then return resign(player.colour)
         when 'draw' then break offer_draw(player, player.colour)
-        when 'save' then raise NotImplementedError
+        when /save/ then save_game(input); next
         when 'quit' then return
         end
 
@@ -139,18 +139,25 @@ class ChessUI
     puts board_string
     print "\e[0m  "
 
-    # TODO handle overflowing moves
+    row_index = 8
 
     if @labels
       Chessboard::FILES.each { |letter| print letter.to_s  + " " }
+      print notation_rows[row_index].to_s
+      row_index += 1
       put_blank_line
+    end
+
+    if notation_rows[row_index..]
+      notation_rows[row_index..].each do |row|
+        print " " * (@labels ? 18 : 16) + row + "\n"
+      end
     end
   end
 
   def format_notation(padding)
-    # each moves is 18 characters
-    columns = (`tput cols`.to_i - padding) / 18
-    number_of_rows = [8, (@chessboard.moves.length / columns).ceil].max
+    columns = (`tput cols`.to_i - padding) / 21
+    number_of_rows = [8, (@chessboard.moves.length / columns.to_f).ceil].max
     rows = Array.new(number_of_rows) { String.new }
 
     @chessboard.moves.each_with_index do |move, index|
@@ -161,5 +168,22 @@ class ChessUI
 
     # clear redundant trailing whitespace
     rows.each(&:rstrip!)
+  end
+
+  def save_game(input)
+    input = input.split(' ')
+    if input.length  < 2
+      return puts 'Please specify a file path to save the game to'
+    end
+
+    filename = input[1]
+
+    begin
+      File.write(filename, @chessboard.to_pgn + " \n")
+    rescue IOError
+      puts "Unable to save game to '#{filename}', please try again."
+    else
+      puts "Game saved successfully to '#{filename}'"
+    end
   end
 end

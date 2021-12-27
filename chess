@@ -14,7 +14,13 @@ OptionParser.new do |opts|
     options[:labels] = true
   end
   opts.on '-g', '--game FILE', 'Load a game from FILE' do |filename|
-    raise NotImplementedError
+    begin
+      options[:pgn] = File.read(filename)
+    rescue IOError
+      puts "Error reading from file: '#{filename}'. Please make sure it exists."
+    else
+      puts "Loading game..."
+    end
   end
   opts.on '-r', '--replay FILE [N]',
   'Replay a game stored in FILE with a N second delay between moves' \
