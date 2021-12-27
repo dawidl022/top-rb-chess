@@ -61,6 +61,24 @@ class Chessboard
     @board_captures.filter { |board| board == current_board }.length >= n
   end
 
+  # Only check for the obvious dead positions, i.e. king vs king, king & bishop
+  # vs king, king & knight vs king
+  def dead_position?
+    left_pieces = {
+      white: find_all_pieces(:white), black: find_all_pieces(:black)
+    }
+
+    return true if left_pieces.all? { |(colour, pieces)| pieces.length == 1 }
+
+    left_pieces.each do |colour, pieces|
+      return true if pieces.length == 2 && \
+        left_pieces[self.class.opponent_colour(colour)].length == 1 && \
+        pieces.any? { |piece| piece.is_a?(Bishop) || piece.is_a?(Knight) }
+    end
+
+    false
+  end
+
   def move(notation, colour)
     result = evaluate_move(notation, colour)
 

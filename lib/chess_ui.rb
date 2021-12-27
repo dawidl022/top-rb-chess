@@ -37,10 +37,10 @@ class ChessUI
         break
       end
 
-      # TODO
-      # if @chessboard.dead_position
-      #   puts 'Draw. Dead position.'
-      # end
+      if @chessboard.dead_position?
+        puts 'Draw. Dead position.'
+        break
+      end
 
       if @chessboard.moves_since_capture_or_pawn_move >= 75
         puts 'Draw. 75 moves passed since last capture or pawn move.'

@@ -1266,4 +1266,101 @@ RSpec.describe Chessboard do
       end
     end
   end
+
+  describe "#dead_position" do
+    before do
+      board.instance_variable_set(:@board, empty_board)
+      board.board[6][3] = King.new(:black, board.board, [7, 4])
+      board.board[4][3] = King.new(:white, board.board, [0, 4])
+    end
+
+    context 'when only two kings are left' do
+      before do
+        board.move('Ke4', :white)
+        board.move('Kxd6', :black)
+      end
+
+      it { should be_dead_position }
+    end
+
+    context 'as white' do
+      context 'when a king and a pawn vs a king is left' do
+        before do
+          board.board[5][3] = Pawn.new(:white, board.board, [1, 3])
+        end
+
+        it { should_not be_dead_position }
+      end
+
+      context 'when a king and bishop vs king are left' do
+        before do
+          board.board[5][3] = Bishop.new(:white, board.board)
+        end
+
+        it { should be_dead_position }
+      end
+
+      context 'when a king and knight vs king are left' do
+        before do
+          board.board[5][3] = Knight.new(:white, board.board)
+        end
+
+        it { should be_dead_position }
+      end
+
+      context 'when a king and rook vs king are left' do
+        before do
+          board.board[5][3] = Rook.new(:white, board.board)
+        end
+
+        it { should_not be_dead_position }
+      end
+
+      context 'when a king and queen vs king are left' do
+        before do
+          board.board[5][3] = Queen.new(:white, board.board)
+        end
+      end
+    end
+
+    context 'as black' do
+      context 'when a king and a pawn vs a king is left' do
+        before do
+          board.board[5][3] = Pawn.new(:black, board.board, [6, 3])
+        end
+
+        it { should_not be_dead_position }
+      end
+
+      context 'when a king and bishop vs king are left' do
+        before do
+          board.board[5][3] = Bishop.new(:black, board.board)
+        end
+
+        it { should be_dead_position }
+      end
+
+      context 'when a king and knight vs king are left' do
+        before do
+          board.board[5][3] = Knight.new(:black, board.board)
+        end
+
+        it { should be_dead_position }
+      end
+
+      context 'when a king and rook vs king are left' do
+        before do
+          board.board[5][3] = Rook.new(:black, board.board)
+        end
+
+        it { should_not be_dead_position }
+      end
+
+      context 'when a king and queen vs king are left' do
+        before do
+          board.board[5][3] = Queen.new(:black, board.board)
+        end
+      end
+    end
+  end
 end
