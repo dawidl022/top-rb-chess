@@ -7,6 +7,6 @@ class Player
 
   def move
     print "#{@colour.to_s.capitalize}'s move: "
-    gets.chomp
+    gets.chomp.strip
   end
 end

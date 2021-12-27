@@ -221,6 +221,20 @@ RSpec.describe Chessboard do
             end
           end
 
+          context 'when =Q is noted' do
+            it 'is also accepted' do
+              pawn = board.board[6][4]
+              board.move('e8=Q', :white)
+              expect(board.board[7][4]).to be_a(Queen)
+              expect(board.board[7][4].colour).to eq(:white)
+            end
+
+            it 'is recorded without the =' do
+              board.move('e8=Q+', :white)
+              expect(board.moves[-1][-1]).to eq('e8Q+')
+            end
+          end
+
           context 'when R is noted' do
             it 'place a rook on the board' do
               pawn = board.board[6][4]
@@ -719,6 +733,21 @@ RSpec.describe Chessboard do
             expect(board.board[7][5]).to be rook
             expect(board.board[7][4]).to be_nil
             expect(board.board[7][7]).to be_nil
+          end
+        end
+
+        context 'when given PGN notation' do
+          before do
+            board.board[0][5] = nil
+            board.board[0][6] = nil
+
+            board.board[7][5] = nil
+            board.board[7][6] = nil
+          end
+
+          it 'is standardized when PGN notation is provided' do
+            board.move('O-O', :white)
+            expect(board.moves[-1][-1]).to eq('0-0')
           end
         end
 
@@ -1388,6 +1417,142 @@ RSpec.describe Chessboard do
           board.board[5][3] = Queen.new(:black, board.board)
         end
       end
+    end
+  end
+
+  describe ".parse_pgn" do
+    it 'given a valid pgn with no inline comments returns a matrix of moves' do
+      pgn = <<~GAME
+        [Event "USA-chJ"]
+        [Site "?"]
+        [Date "1955.??.??"]
+        [Round "?"]
+        [White "Thomason, J."]
+        [Black "Fischer, Robert James"]
+        [Result "0-1"]
+        [WhiteElo ""]
+        [BlackElo ""]
+        [ECO "E91"]
+
+        1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 O-O 6.Bd3 Bg4 7.O-O Nc6 8.Be3 Nd7
+        9.Be2 Bxf3 10.Bxf3 e5 11.d5 Ne7 12.Be2 f5 13.f4 h6 14.Bd3 Kh7 15.Qe2 fxe4
+        16.Nxe4 Nf5 17.Bd2 exf4 18.Bxf4 Ne5 19.Bc2 Nd4 20.Qd2 Nxc4 21.Qf2 Rxf4 22.Qxf4 Ne2+
+        23.Kh1 Nxf4  0-1
+      GAME
+
+      expect(described_class.parse_pgn(pgn)).to eq([
+        ['d4', 'Nf6'], ['c4', 'g6'], ['Nc3', 'Bg7'], ['e4', 'd6'],
+        ['Nf3', '0-0'], ['Bd3', 'Bg4'], ['0-0', 'Nc6'], ['Be3', 'Nd7'],
+        ['Be2', 'Bxf3'], ['Bxf3', 'e5'], ['d5', 'Ne7'], ['Be2', 'f5'],
+        ['f4', 'h6'], ['Bd3', 'Kh7'], ['Qe2', 'fxe4'], ['Nxe4', 'Nf5'],
+        ['Bd2', 'exf4'], ['Bxf4', 'Ne5'], ['Bc2', 'Nd4'], ['Qd2', 'Nxc4'],
+        ['Qf2', 'Rxf4'], ['Qxf4', 'Ne2+'], ['Kh1', 'Nxf4']
+      ])
+    end
+
+    it 'when pawn promotion is present' do
+      pgn = <<~GAME
+        [Event "USA-chJ"]
+        [Site "?"]
+        [Date "1957.??.??"]
+        [Round "?"]
+        [White "Thacker, R."]
+        [Black "Fischer, Robert James"]
+        [Result "0-1"]
+        [WhiteElo ""]
+        [BlackElo ""]
+        [ECO "B50"]
+
+        1.e4 c5 2.Nf3 d6 3.c3 Nf6 4.Bd3 g6 5.Bc2 Bg7 6.d4 O-O 7.h3 cxd4 8.cxd4 Nc6
+        9.cxd4 Nc6 10.d5 Nd4 11.Nxd4 exd4 12.Ne2 Re8 13.f3 Qb6 14.Bd3 Nd7 15.Qa4 Rf8
+        16.O-O Nc5 17.Qd1 Bd7 18.Kh1 f5 19.Ng3 Nxd3 20.Qxd3 Bb5 21.Qd1 Bxf1 22.Qxf1 f4
+        23.Ne2 g5 24.Qd1 Rac8 25.Rb1 Qa6 26.Qb3 Qxe2 27.Bxf4 gxf4 28.Qxb7 d3 29.Qxa7 d2
+        30.Qxg7+ Kxg7 31.Re1 dxe1=Q+ 32.Kh2  0-1
+      GAME
+
+      expect(described_class.parse_pgn(pgn)).to eq([
+        ['e4', 'c5'], ['Nf3', 'd6'], ['c3', 'Nf6'], ['Bd3', 'g6'],
+        ['Bc2', 'Bg7'], ['d4', '0-0'], ['h3', 'cxd4'], ['cxd4', 'Nc6'],
+        ['cxd4', 'Nc6'], ['d5', 'Nd4'], ['Nxd4', 'exd4'], ['Ne2', 'Re8'],
+        ['f3', 'Qb6'], ['Bd3', 'Nd7'], ['Qa4', 'Rf8'], ['0-0', 'Nc5'],
+        ['Qd1', 'Bd7'], ['Kh1', 'f5'], ['Ng3', 'Nxd3'], ['Qxd3', 'Bb5'],
+        ['Qd1', 'Bxf1'], ['Qxf1', 'f4'], ['Ne2', 'g5'], ['Qd1', 'Rac8'],
+        ['Rb1', 'Qa6'], ['Qb3', 'Qxe2'], ['Bxf4', 'gxf4'], ['Qxb7', 'd3'],
+        ['Qxa7', 'd2'], ['Qxg7+','Kxg7'], ['Re1', 'dxe1Q+'], ['Kh2']
+      ])
+    end
+
+    it 'when comments are present' do
+        pgn = <<~GAME
+        [Event "USA-chJ"]
+        [Site "?"]
+        [Date "1957.??.??"]
+        [Round "?"]
+        [White "Thacker, R."]
+        [Black "Fischer, Robert James"]
+        [Result "0-1"]
+        [WhiteElo ""]
+        [BlackElo ""]
+        [ECO "B50"]
+
+        1.e4 c5 2.Nf3 d6 3.c3 {some comment I don't care about} Nf6 4.Bd3 g6
+      GAME
+
+      expect(described_class.parse_pgn(pgn)).to eq([
+        ['e4', 'c5'], ['Nf3', 'd6'], ['c3', 'Nf6'], ['Bd3', 'g6'],
+      ])
+    end
+
+    it 'when comments are at end of line and spaces after move numbers' do
+      pgn = <<~GAME
+        1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 {This opening is called the Ruy Lopez.}
+        4. Ba4 Nf6
+      GAME
+
+      expect(described_class.parse_pgn(pgn)).to eq([
+        ['e4', 'e5'], ['Nf3', 'Nc6'], ['Bb5', 'a6'], ['Ba4', 'Nf6'],
+      ])
+    end
+  end
+
+  describe '#to_pgn' do
+    it 'returns a pgn of the current moves made on the board' do
+      board.instance_variable_set(:@moves, [
+        ['d4', 'Nf6'], ['c4', 'g6'], ['Nc3', 'Bg7'], ['e4', 'd6'],
+        ['Nf3', '0-0'], ['Bd3', 'Bg4'], ['0-0', 'Nc6'], ['Be3', 'Nd7'],
+        ['Be2', 'Bxf3'], ['Bxf3', 'e5'], ['d5', 'Ne7'], ['Be2', 'f5'],
+        ['f4', 'h6'], ['Bd3', 'Kh7'], ['Qe2', 'fxe4'], ['Nxe4', 'Nf5'],
+        ['Bd2', 'exf4'], ['Bxf4', 'Ne5'], ['Bc2', 'Nd4'], ['Qd2', 'Nxc4'],
+        ['Qf2', 'Rxf4'], ['Qxf4', 'Ne2+'], ['Kh1', 'Nxf4']
+      ])
+
+      expect(board.to_pgn).to eq(%w[
+        1.d4 Nf6 2.c4 g6 3.Nc3 Bg7 4.e4 d6 5.Nf3 O-O 6.Bd3 Bg4 7.O-O Nc6 8.Be3 Nd7
+        9.Be2 Bxf3 10.Bxf3 e5 11.d5 Ne7 12.Be2 f5 13.f4 h6 14.Bd3 Kh7 15.Qe2 fxe4
+        16.Nxe4 Nf5 17.Bd2 exf4 18.Bxf4 Ne5 19.Bc2 Nd4 20.Qd2 Nxc4 21.Qf2 Rxf4 22.Qxf4 Ne2+
+        23.Kh1 Nxf4
+      ].join(" "))
+    end
+
+    it 'returns pgn with pawn promotion notation using =' do
+      board.instance_variable_set(:@moves, [
+        ['e4', 'c5'], ['Nf3', 'd6'], ['c3', 'Nf6'], ['Bd3', 'g6'],
+        ['Bc2', 'Bg7'], ['d4', '0-0'], ['h3', 'cxd4'], ['cxd4', 'Nc6'],
+        ['cxd4', 'Nc6'], ['d5', 'Nd4'], ['Nxd4', 'exd4'], ['Ne2', 'Re8'],
+        ['f3', 'Qb6'], ['Bd3', 'Nd7'], ['Qa4', 'Rf8'], ['0-0', 'Nc5'],
+        ['Qd1', 'Bd7'], ['Kh1', 'f5'], ['Ng3', 'Nxd3'], ['Qxd3', 'Bb5'],
+        ['Qd1', 'Bxf1'], ['Qxf1', 'f4'], ['Ne2', 'g5'], ['Qd1', 'Rac8'],
+        ['Rb1', 'Qa6'], ['Qb3', 'Qxe2'], ['Bxf4', 'gxf4'], ['Qxb7', 'd3'],
+        ['Qxa7', 'd2'], ['Qxg7+','Kxg7'], ['Re1', 'dxe1Q+'], ['Kh2']
+      ])
+
+      expect(board.to_pgn).to eq(%w[
+        1.e4 c5 2.Nf3 d6 3.c3 Nf6 4.Bd3 g6 5.Bc2 Bg7 6.d4 O-O 7.h3 cxd4 8.cxd4 Nc6
+        9.cxd4 Nc6 10.d5 Nd4 11.Nxd4 exd4 12.Ne2 Re8 13.f3 Qb6 14.Bd3 Nd7 15.Qa4 Rf8
+        16.O-O Nc5 17.Qd1 Bd7 18.Kh1 f5 19.Ng3 Nxd3 20.Qxd3 Bb5 21.Qd1 Bxf1 22.Qxf1 f4
+        23.Ne2 g5 24.Qd1 Rac8 25.Rb1 Qa6 26.Qb3 Qxe2 27.Bxf4 gxf4 28.Qxb7 d3 29.Qxa7 d2
+        30.Qxg7+ Kxg7 31.Re1 dxe1=Q+ 32.Kh2
+      ].join(" "))
     end
   end
 end

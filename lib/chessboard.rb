@@ -44,7 +44,20 @@ class Chessboard
   end
 
   def self.parse_pgn(pgn_string)
-    # TODO PGN PARSING: [0-9]+.(\S+ (?:\S+)?)
+    pgn_string = pgn_string.gsub(/\s*{.*}\s*/, ' ')
+    pgn_string.scan(/[0-9]+.\s*(\S+ (?:\S+)?)/).map do |move|
+      move[0].gsub('O', '0').gsub('=', '').split(" ")
+    end
+  end
+
+  def to_pgn
+    # TODO implement conversion, i.e. castling notation, promotion notation
+    result = ""
+    @moves.each_with_index do |move, index|
+      result += "#{index + 1}.#{move[0].gsub(/[QRBN][+#]?$/, '=\0')} " \
+        "#{move[1].gsub(/[QRBN][+#]?$/, '=\0') if move[1]} "
+    end
+    result.strip.gsub('0-0', 'O-O').gsub('0-0-0', 'O-O-O')
   end
 
   def initialize
@@ -84,7 +97,7 @@ class Chessboard
   end
 
   def move(notation, colour)
-    notation = notation.gsub(/[+#]$/, '')
+    notation = notation.gsub(/[+#]$/, '').gsub('=', '')
     result = evaluate_move(notation, colour)
 
     record_move(notation, colour) if result.equal?(true)
@@ -169,6 +182,8 @@ class Chessboard
     elsif under_check?(opponent_colour)
       notation += '+'
     end
+
+    notation = notation.gsub('O', '0')
 
     if colour == :white
       @moves << [notation]
@@ -401,14 +416,20 @@ class Chessboard
         cloned_chessboard.instance_variable_set(:@board, cloned_board)
         cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
 
-        if move(castle_type, colour).equal?(true)
+        if cloned_chessboard.move(castle_type, colour).equal?(true)
           castling_rights[colour] << castle_type
         end
       end
 
+      cloned_chessboard = Chessboard.new
+      cloned_board = clone_board
+
+      cloned_chessboard.instance_variable_set(:@board, cloned_board)
+      cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
+
       pawns = find_all_pieces(Pawn, colour)
       pawns.each do |pawn|
-        legal_moves(pawn).each do |move|
+        cloned_chessboard.legal_moves(pawn).each do |move|
           if move[1] != pawn.position[1] && @board[move[0]][move[1]].nil?
             en_passant_captures[colour] << [pawn.position, move]
           end

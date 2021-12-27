@@ -139,6 +139,8 @@ class ChessUI
     puts board_string
     print "\e[0m  "
 
+    # TODO handle overflowing moves
+
     if @labels
       Chessboard::FILES.each { |letter| print letter.to_s  + " " }
       put_blank_line

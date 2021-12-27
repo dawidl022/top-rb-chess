@@ -56,5 +56,12 @@ RSpec.describe Player do
 
       expect(player.move).to eq("Qxb5")
     end
+
+    it 'removes leading and trailing whitespace' do
+      mute_io
+      allow(player).to receive(:gets).and_return(" Qxb5  ")
+
+      expect(player.move).to eq("Qxb5")
+    end
   end
 end
