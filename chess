@@ -18,8 +18,9 @@ OptionParser.new do |opts|
   opts.on '-g', '--game FILE', 'Load a game from FILE' do |filename|
     begin
       options[:pgn] = File.read(filename)
-    rescue IOError
+    rescue
       puts "Error reading from file: '#{filename}'. Please make sure it exists."
+      return
     else
       puts "Loading game..."
     end

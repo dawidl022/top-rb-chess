@@ -8,11 +8,25 @@ class ChessUI
     @black = Player.new(:black)
     @labels = labels
     @scroll = scroll
+
     if pgn && replay
-      @chessboard = replay_game(pgn, replay)
+      @chessboard = begin
+        replay_game(pgn, replay)
+      rescue ArgumentError => error
+        default_chessboard(error)
+      end
     else
-      @chessboard = pgn ? Chessboard.from_pgn(pgn) : Chessboard.new
+      @chessboard = if pgn
+        begin
+          Chessboard.from_pgn(pgn)
+        rescue ArgumentError => error
+          default_chessboard(error)
+        end
+      else
+        Chessboard.new
+      end
     end
+
   end
 
   def play_game
@@ -198,7 +212,7 @@ class ChessUI
 
     begin
       File.write(filename, @chessboard.to_pgn + " \n")
-    rescue IOError
+    rescue
       puts "Unable to save game to '#{filename}', please try again."
       false
     else
@@ -210,7 +224,6 @@ class ChessUI
   def replay_game(pgn, delay)
     board = Chessboard.new
     moves = Chessboard.parse_pgn(pgn)
-
 
     moves.each do |move|
       move.each_with_index do |sub_move, index|
@@ -240,5 +253,12 @@ class ChessUI
     save_game if ask_yes_no_question("Save game before exiting?")
 
     return true
+  end
+
+  def default_chessboard(error)
+    puts error.message
+    puts 'Starting a new game instead...'
+    sleep 3
+    Chessboard.new
   end
 end
