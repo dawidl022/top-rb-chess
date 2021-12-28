@@ -152,8 +152,8 @@ class ChessUI
       put_blank_line
     end
 
-    if notation_rows[row_index..]
-      notation_rows[row_index..].each do |row|
+    if notation_rows[row_index...notation_rows.length]
+      notation_rows[row_index...notation_rows.length].each do |row|
         print " " * (@labels ? 18 : 16) + row + "\n"
       end
     end
