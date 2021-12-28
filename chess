@@ -42,4 +42,6 @@ OptionParser.new do |opts|
   end
 end.parse!
 
-ChessUI.new(**options).play_game
+loop do
+  break unless ChessUI.new(**options).play_game
+end

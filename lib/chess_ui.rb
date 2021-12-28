@@ -25,6 +25,8 @@ class ChessUI
       player = whites_move ? @white : @black
       whites_move = !whites_move
 
+      @just_saved = false
+
       if @chessboard.checkmate?(player.colour)
         puts "Checkmate! " \
           "#{Chessboard.opponent_colour(player.colour).to_s.capitalize} wins."
@@ -57,11 +59,19 @@ class ChessUI
 
       loop do
         input = player.move
+
         case input
-        when 'resign' then return resign(player.colour)
-        when 'draw' then break offer_draw(player, player.colour)
-        when /save/ then save_game(input); next
-        when 'quit' then return
+        when 'resign' then
+          resign(player.colour)
+          return play_again_prompt
+        when 'draw'
+          return play_again_prompt if offer_draw(player, player.colour)
+          break
+        when /save/
+          @just_saved = save_game(input)
+          next
+        when /quit|exit/
+          return if exit_prompt
         end
 
         break if (result = @chessboard.move(input, player.colour)).equal?(true)
@@ -71,6 +81,7 @@ class ChessUI
         puts result
       end
     end
+    play_again_prompt
   end
 
   private
@@ -82,10 +93,10 @@ class ChessUI
   def offer_draw(player, colour)
     if @chessboard.moves_since_capture_or_pawn_move >= 50
       puts 'Draw. 50 or more moves passed since last capture or pawn move.'
-      exit
+      return true
     elsif @chessboard.nfold_repetition?(3)
       puts 'Draw. Threefold repetition.'
-      exit
+      return true
     else
       puts 'Make your move to claim/offer a draw'
       until (result = @chessboard.move(player.move, player.colour)).equal?(true)
@@ -101,19 +112,20 @@ class ChessUI
 
       if @chessboard.moves_since_capture_or_pawn_move >= 50
         puts 'Draw. 50 or more moves passed since last capture or pawn move.'
-        exit
+        return true
       elsif @chessboard.nfold_repetition?(3)
         puts 'Draw. Threefold repetition.'
-        exit
+        return true
       end
 
       print "(#{Chessboard.opponent_colour(colour).to_s.capitalize}) " \
         "Type in 'draw' to agree to the offered draw: "
       if gets.chomp.downcase == 'draw'
         puts 'Draw by agreement'
-        exit
+        return true
       end
     end
+    false
   end
 
   def print_board(chessboard = @chessboard)
@@ -174,20 +186,24 @@ class ChessUI
     rows.each(&:rstrip!)
   end
 
-  def save_game(input)
+  def save_game(input = '')
     input = input.split(' ')
-    if input.length  < 2
-      return puts 'Please specify a file path to save the game to'
-    end
 
-    filename = input[1]
+    if input.length  < 2
+      puts 'Please specify a file path to save the game to:'
+      filename = gets.chomp.strip
+    else
+      filename = input[1]
+    end
 
     begin
       File.write(filename, @chessboard.to_pgn + " \n")
     rescue IOError
       puts "Unable to save game to '#{filename}', please try again."
+      false
     else
       puts "Game saved successfully to '#{filename}'"
+      true
     end
   end
 
@@ -209,5 +225,20 @@ class ChessUI
     end
 
     board
+  end
+
+  def play_again_prompt
+    put_blank_line
+    save_game if ask_yes_no_question("Save game?")
+    ask_yes_no_question("Play again?")
+  end
+
+  def exit_prompt
+    return true if @just_saved || @chessboard.moves.length == 0
+
+    put_blank_line
+    save_game if ask_yes_no_question("Save game before exiting?")
+
+    return true
   end
 end
