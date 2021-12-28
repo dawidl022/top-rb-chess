@@ -112,7 +112,9 @@ class Chessboard
   end
 
   def move(notation, colour)
-    notation = notation.gsub(/[+#]$/, '').gsub('=', '')
+    # TODO abstract cloning away
+    notation = normalise_notation(notation, colour)
+
     result = evaluate_move(notation, colour)
 
     record_move(notation, colour) if result.equal?(true)
@@ -147,11 +149,9 @@ class Chessboard
     end
 
     Set.new(valid_moves.select do |(move_rank, move_file)|
-      cloned_chessboard = Chessboard.new
-      cloned_board = clone_board
+      cloned_chessboard = clone_chessboard
+      cloned_board = cloned_chessboard.board
 
-      cloned_chessboard.instance_variable_set(:@board, cloned_board)
-      cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
       piece_rank, piece_file = piece.position
 
       # simulate move on cloned chessboard
@@ -425,22 +425,14 @@ class Chessboard
 
     [:white, :black].each do |colour|
       ['0-0', '0-0-0'].each do |castle_type|
-        cloned_chessboard = Chessboard.new
-        cloned_board = clone_board
-
-        cloned_chessboard.instance_variable_set(:@board, cloned_board)
-        cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
+        cloned_chessboard = clone_chessboard
 
         if cloned_chessboard.move(castle_type, colour).equal?(true)
           castling_rights[colour] << castle_type
         end
       end
 
-      cloned_chessboard = Chessboard.new
-      cloned_board = clone_board
-
-      cloned_chessboard.instance_variable_set(:@board, cloned_board)
-      cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
+      cloned_chessboard = clone_chessboard
 
       pawns = find_all_pieces(Pawn, colour)
       pawns.each do |pawn|
@@ -455,6 +447,36 @@ class Chessboard
 
     @board_captures << BoardCapture.new(@board.inspect, colour, castling_rights,
                                         en_passant_captures)
+  end
+
+  def normalise_notation(notation, colour)
+    notation = notation.gsub(/[+#]$/, '').gsub('=', '')
+
+    source_match = notation.match(/[KQRBN]((?:[a-g]|[1-8]){1,2})x?[a-g][1-8]/)
+    source_match = source_match[1] unless source_match.nil?
+
+    return notation if source_match.nil?
+
+    ['', source_match[0], source_match[1]].each do |replace|
+      stripped_notation = notation.sub(source_match, replace)
+      return notation if stripped_notation == notation
+
+      if clone_chessboard.move(stripped_notation, colour).equal?(true)
+        return stripped_notation
+      end
+    end
+
+    notation
+  end
+
+  def clone_chessboard
+    cloned_chessboard = Chessboard.new
+    cloned_board = clone_board
+
+    cloned_chessboard.instance_variable_set(:@board, cloned_board)
+    cloned_chessboard.instance_variable_set(:@moves, cloned_moves)
+
+    cloned_chessboard
   end
 
   def update_move_count(colour)

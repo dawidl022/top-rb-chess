@@ -478,12 +478,22 @@ RSpec.describe Chessboard do
           expect(board.board[2][4]).to be_nil
         end
 
+        it 'moves knight e3 to d5 and removes redundancy' do
+          board.move('Ne3d5', :white)
+          expect(board.moves[-1][-1]).to eq('Ned5')
+        end
+
         it 'moves knight c7 to d5' do
           knight = board.board[6][2]
           board.move('N7d5', :white)
           expect(knight.position).to eq([4, 3])
           expect(board.board[4][3]).to be knight
           expect(board.board[6][2]).to be_nil
+        end
+
+        it 'moves knight c7 to d5 and removes redundancy' do
+          board.move('Nc7d5', :white)
+          expect(board.moves[-1][-1]).to eq('N7d5')
         end
 
         it 'moves knight c3 to d5' do
@@ -505,7 +515,30 @@ RSpec.describe Chessboard do
             expect(board.board[0][1]).to be_nil
           end
 
-          it 'records move without redundancy'
+          it 'records move without redundancy' do
+            board.move("Nb1c3", :white)
+            expect(board.moves[-1][-1]).to eq('Nc3')
+          end
+        end
+      end
+
+      context 'when a disambiguation, capture and check are made' do
+        before do
+          board.instance_variable_set(:@board, empty_board)
+          board.board[6][2] = Queen.new(:white, board.board)
+          board.board[6][5] = Rook.new(:black, board.board)
+          board.board[5][6] = King.new(:black, board.board, [7, 4])
+          board.board[3][2] = Queen.new(:white, board.board)
+          board.board[3][5] = Queen.new(:white, board.board)
+          board.board[1][5] = King.new(:white, board.board, [0, 4])
+        end
+
+        it 'makes the move' do
+          board.move("Qc4xf7#", :white)
+          expect(board.board[6][5]).to be_a(Queen)
+            .and(have_attributes(colour: :white))
+          expect(board.board[3][1]).to be_nil
+          expect(board).to be_checkmate(:black)
         end
       end
 
