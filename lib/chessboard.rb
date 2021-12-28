@@ -8,6 +8,8 @@ class Chessboard
   FILES = [:a, :b, :c, :d, :e, :f, :g, :h]
   PIECES = {Q: Queen, K: King, R: Rook, B: Bishop, N: Knight}
   PIECE_NAMES = {Q: 'queen', K: 'king', R: 'rook', B: 'bishop', N: 'knight'}
+  INVALID_MOVE_MSG = 'Invalid move'
+  ILLEGAL_MOVE_MSG = 'Illegal move'
 
   def self.notation_to_indices(notation)
     invalid_notation_error = ArgumentError.new(
@@ -66,7 +68,6 @@ class Chessboard
   end
 
   def to_pgn
-    # TODO implement conversion, i.e. castling notation, promotion notation
     result = ""
     @moves.each_with_index do |move, index|
       result += "#{index + 1}.#{move[0].gsub(/[QRBN][+#]?$/, '=\0')} " \
@@ -112,7 +113,6 @@ class Chessboard
   end
 
   def move(notation, colour)
-    # TODO abstract cloning away
     notation = normalise_notation(notation, colour)
 
     result = evaluate_move(notation, colour)
@@ -187,7 +187,7 @@ class Chessboard
     return promote_pawn(notation, colour) if pawn_promotion_notation?(notation)
     return move_pawn(notation, colour) if pawn_notation?(notation)
     return move_piece(notation, colour) if PIECES.keys.include?(notation[0].to_sym)
-    'Invalid move'
+    INVALID_MOVE_MSG
   end
 
   def record_move(notation, colour)
@@ -216,7 +216,7 @@ class Chessboard
     if notation.length == 4
       file = FILES.find_index(notation[0].to_sym)
       # TODO extract error messages into constants
-      return 'Invalid move' unless file
+      return INVALID_MOVE_MSG unless file
     else
       file = target[1]
     end
@@ -230,7 +230,7 @@ class Chessboard
       next unless piece
 
       unless piece.is_a?(Pawn) && piece.colour == colour
-        return 'Invalid move'
+        return INVALID_MOVE_MSG
       end
 
       if legal_moves(piece).include?(target)
@@ -250,11 +250,11 @@ class Chessboard
 
         return en_passant ? :ep : true
       else
-        return 'Illegal move'
+        return ILLEGAL_MOVE_MSG
       end
     end
 
-    return 'Invalid move'
+    return INVALID_MOVE_MSG
   end
 
   def promote_pawn(notation, colour)
@@ -272,7 +272,7 @@ class Chessboard
 
     pawn = @board[pawn_rank][pawn_file]
 
-    return 'Illegal move' unless legal_moves(pawn).include?(target)
+    return ILLEGAL_MOVE_MSG unless legal_moves(pawn).include?(target)
 
     if notation.length == 2 || notation.length == 4
       return "Specify a piece to promote to: #{notation}Q, #{notation}R, " \
@@ -314,7 +314,7 @@ class Chessboard
       piece_name = PIECE_NAMES[notation[0].to_sym]
       return "Multiple #{piece_name}s can go to #{notation[-2, 2]}, please disambiguate"
     elsif pieces.length == 0
-      return 'Illegal move'
+      return ILLEGAL_MOVE_MSG
     end
 
     starting_rank, starting_file = pieces[0].position
@@ -334,11 +334,11 @@ class Chessboard
 
     king = @board[rank][4]
     rook = @board[rank][rook_start]
-    return 'Invalid move' unless king.is_a?(King) && rook.is_a?(Rook)
+    return INVALID_MOVE_MSG unless king.is_a?(King) && rook.is_a?(Rook)
 
     opponent_colour = colour == :white ? :black : :white
 
-    return 'Illegal move' if !legal_moves(king).include?(finishing_square) \
+    return ILLEGAL_MOVE_MSG if !legal_moves(king).include?(finishing_square) \
       || under_check?(colour) \
       || square_attacked?(square_to_check, opponent_colour)
 

@@ -9,24 +9,20 @@ class ChessUI
     @labels = labels
     @scroll = scroll
 
-    if pgn && replay
-      @chessboard = begin
-        replay_game(pgn, replay)
-      rescue ArgumentError => error
-        default_chessboard(error)
-      end
-    else
-      @chessboard = if pgn
+    @chessboard =
+      if pgn
         begin
-          Chessboard.from_pgn(pgn)
-        rescue ArgumentError => error
+          if replay
+            replay_game(pgn, replay)
+          else
+            Chessboard.from_pgn(pgn)
+          end
+        rescue ArgumentError => exception
           default_chessboard(error)
         end
       else
         Chessboard.new
       end
-    end
-
   end
 
   def play_game
@@ -89,9 +85,7 @@ class ChessUI
         end
 
         break if (result = @chessboard.move(input, player.colour)).equal?(true)
-        clear_screen(scroll: @scroll)
-        print_board
-        put_blank_line
+        render_board
         puts result
       end
     end
@@ -105,25 +99,7 @@ class ChessUI
   end
 
   def offer_draw(player, colour)
-    if @chessboard.moves_since_capture_or_pawn_move >= 50
-      puts 'Draw. 50 or more moves passed since last capture or pawn move.'
-      return true
-    elsif @chessboard.nfold_repetition?(3)
-      puts 'Draw. Threefold repetition.'
-      return true
-    else
-      puts 'Make your move to claim/offer a draw'
-      until (result = @chessboard.move(player.move, player.colour)).equal?(true)
-        clear_screen(scroll: @scroll)
-        print_board
-        put_blank_line
-        puts result
-      end
-
-      clear_screen(scroll: @scroll)
-      print_board
-      put_blank_line
-
+    automatic_draws = proc do
       if @chessboard.moves_since_capture_or_pawn_move >= 50
         puts 'Draw. 50 or more moves passed since last capture or pawn move.'
         return true
@@ -131,14 +107,27 @@ class ChessUI
         puts 'Draw. Threefold repetition.'
         return true
       end
-
-      print "(#{Chessboard.opponent_colour(colour).to_s.capitalize}) " \
-        "Type in 'draw' to agree to the offered draw: "
-      if gets.chomp.downcase == 'draw'
-        puts 'Draw by agreement'
-        return true
-      end
     end
+
+    automatic_draws.call
+
+    puts 'Make your move to claim/offer a draw'
+    until (result = @chessboard.move(player.move, player.colour)).equal?(true)
+      render_board
+      puts result
+    end
+
+    render_board
+
+    automatic_draws.call()
+
+    print "(#{Chessboard.opponent_colour(colour).to_s.capitalize}) " \
+      "Type in 'draw' to agree to the offered draw: "
+    if gets.chomp.downcase == 'draw'
+      puts 'Draw by agreement'
+      return true
+    end
+
     false
   end
 
@@ -167,11 +156,12 @@ class ChessUI
     end
 
     puts board_string
-    print "\e[0m  "
+    print "\e[0m"
 
     row_index = 8
 
     if @labels
+      print '  '
       Chessboard::FILES.each { |letter| print letter.to_s  + " " }
       print notation_rows[row_index].to_s
       row_index += 1
@@ -230,9 +220,7 @@ class ChessUI
         unless board.move(sub_move, index == 0 ? :white : :black).equal?(true)
           raise ArgumentError, 'Incompatible PGN notation supplied'
         end
-        clear_screen(scroll: @scroll)
-        print_board(board)
-        put_blank_line
+        render_board
         sleep delay
       end
     end
@@ -260,5 +248,11 @@ class ChessUI
     puts 'Starting a new game instead...'
     sleep 3
     Chessboard.new
+  end
+
+  def render_board
+    clear_screen(scroll: @scroll)
+    print_board
+    put_blank_line
   end
 end
