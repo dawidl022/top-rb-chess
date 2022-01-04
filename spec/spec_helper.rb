@@ -103,3 +103,6 @@ RSpec.configure do |config|
   Kernel.srand config.seed
 =end
 end
+
+# display full object in diff
+RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = nil

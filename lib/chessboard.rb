@@ -1,4 +1,5 @@
 require_relative '../boards'
+require_relative 'util'
 
 class Chessboard
   include Boards
@@ -46,9 +47,10 @@ class Chessboard
   end
 
   def self.parse_pgn(pgn_string)
-    pgn_string = pgn_string.gsub(/\s*{.*}\s*/, ' ')
-    pgn_string.scan(/[0-9]+.\s*(\S+ \S*)/).map do |move|
-      move[0].gsub('O', '0').gsub('=', '').split(" ")
+    pgn_string = strip_pgn_comments_and_variations(pgn_string)
+
+    pgn_string.scan(/[0-9]+\.\s*(\S+\s\S*)/).map do |move|
+      move[0].gsub('O', '0').gsub('=', '').split
     end
   end
 
@@ -509,6 +511,45 @@ class Chessboard
 
   def lowercase?(string)
     string == string.downcase
+  end
+
+  def self.strip_pgn_comments_and_variations(pgn)
+    stack = Stack.new
+    start_index = 0
+    ranges_to_remove = []
+
+    pgn.chars.each_with_index do |char, current_index|
+      if (char == '}' && stack.peek == '{') || (char == ')' && stack.peek == "(")
+        stack.pop
+        ranges_to_remove << [start_index, current_index] if stack.empty?
+      elsif char == '{' || char == "("
+        start_index = current_index if stack.empty?
+        stack.push(char)
+      end
+    end
+
+    # Mark section to be deleted
+    pgn = pgn.chars.map.with_index do |char, index|
+      keep_char = char
+
+      ranges_to_remove.each do |(start, stop)|
+        break keep_char = '{' if index == start
+        break keep_char = '}' if index == stop
+      end
+
+      keep_char
+    end.join
+
+    # Remove any chars within sections to be deleted
+    pgn.chars.filter.with_index do |char, index|
+      keep_char = true
+
+      ranges_to_remove.each do |(start, stop)|
+        break keep_char = false if index > start && index < stop
+      end
+
+      keep_char
+    end.join.gsub(/\s*{}\s*/, ' ').gsub(/\s+\d+\.\.\./, ' ').gsub(/\[.*\]/, '[]')
   end
 end
 

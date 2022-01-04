@@ -1529,19 +1529,19 @@ RSpec.describe Chessboard do
 
     it 'when comments are present' do
         pgn = <<~GAME
-        [Event "USA-chJ"]
-        [Site "?"]
-        [Date "1957.??.??"]
-        [Round "?"]
-        [White "Thacker, R."]
-        [Black "Fischer, Robert James"]
-        [Result "0-1"]
-        [WhiteElo ""]
-        [BlackElo ""]
-        [ECO "B50"]
+          [Event "USA-chJ"]
+          [Site "?"]
+          [Date "1957.??.??"]
+          [Round "?"]
+          [White "Thacker, R."]
+          [Black "Fischer, Robert James"]
+          [Result "0-1"]
+          [WhiteElo ""]
+          [BlackElo ""]
+          [ECO "B50"]
 
-        1.e4 c5 2.Nf3 d6 3.c3 {some comment I don't care about} Nf6 4.Bd3 g6
-      GAME
+          1.e4 c5 2.Nf3 d6 3.c3 {some comment I don't care about} Nf6 4.Bd3 g6
+        GAME
 
       expect(described_class.parse_pgn(pgn)).to eq([
         ['e4', 'c5'], ['Nf3', 'd6'], ['c3', 'Nf6'], ['Bd3', 'g6'],
@@ -1556,6 +1556,74 @@ RSpec.describe Chessboard do
 
       expect(described_class.parse_pgn(pgn)).to eq([
         ['e4', 'e5'], ['Nf3', 'Nc6'], ['Bb5', 'a6'], ['Ba4', 'Nf6'],
+      ])
+    end
+
+    it 'when nested comments and variations are present' do
+      pgn = <<~GAME
+        [Event "Wch1"]
+        [Site "U.S.A."]
+        [Date "1886.??.??"]
+        [Round "9"]
+        [White "Zukertort, Johannes"]
+        [Black "Steinitz, Wilhelm"]
+        [Result "0-1"]
+        [ECO "D26h"]
+        [Annotator "JvR"]
+
+        1.d4 d5 2.c4 e6 3.Nc3 Nf6 4.Nf3 dxc4 5.e3 c5 6.Bxc4 cxd4 7.exd4 Be7 8.O-O
+        O-O 9.Qe2 Nbd7 {This knight wants to blockades on d5.} 10.Bb3 Nb6 11.Bf4
+        ( 11.Re1 {keeps the initiative.} )
+        11...Nbd5 12.Bg3 Qa5 13.Rac1 Bd7 14.Ne5 Rfd8 15.Qf3 Be8 16.Rfe1 Rac8 17.
+        Bh4 {Intends 18.Nxd5 exd5.} 17...Nxc3 18.bxc3 Qc7 {Black pressures on the
+        hanging pawns.} 19.Qd3
+        ( 19.Bg3 {!} 19...Bd6 20.c4 {(Lasker).} )
+        19...Nd5 20.Bxe7 Qxe7 21.Bxd5 {?!}
+        ( 21.c4 Qg5 22.Rcd1 Nf4 23.Qg3 {steers towards a slight advantage in
+        the endgame.} )
+        21...Rxd5 22.c4 Rdd8 23.Re3 {The attack will fail.}
+        ( 23.Rcd1 {is solid.} )
+        23...Qd6 24.Rd1 f6 25.Rh3 {!?} 25...h6 {!}
+        ( 25...fxe5 26.Qxh7+ Kf8 27.Rg3 {!} 27...Rd7
+        ( 27...Rc7 28.Qh8+ Ke7 29.Rxg7+ Bf7 30.Qh4+ {(Euwe)} )
+        28.Qh8+ Ke7 29.Qh4+ Kf7 30.Qh7 {} )
+        26.Ng4 Qf4 {!} 27.Ne3 Ba4 {!} 28.Rf3 Qd6 29.Rd2
+        ( 29.Rxf6 {?} 29...Bxd1 {!} )
+        29...Bc6 {?}
+        ( 29...b5 {!} 30.Qg6 {!?}
+        ( 30.cxb5 Rc1+ 31.Nd1 Qxd4 32.Qxd4 Rxd4 33.Rxd4 Bxd1 $19 {
+        (Vukovic).} )
+        30...Qf8 31.Ng4 Rxc4 {!} 32.Nxh6+ Kh8 33.h3 gxh6 34.Rxf6 Qg7 {is good
+        for Black).} )
+        30.Rg3 {?}
+        ( 30.d5 {!} 30...Qe5 {!}
+        ( 30...exd5 {(Steinitz)} 31.Nf5 {(Euwe)} )
+        31.Qb1 {Forestalls ..b5 and protects the first rank.} 31...exd5 32.
+        cxd5 {} 32...Bxd5 {??} 33.Rf5 )
+        30...f5 {Threatens ..f4.} 31.Rg6 {!?}
+        ( 31.Nd1 f4 32.Rh3 e5 {!} 33.d5 Bd7 $19 )
+        31...Be4 32.Qb3 Kh7
+        ( 32...Kf7 {(protects e6)} 33.c5 Qe7 {!} 34.Rg3 f4 )
+        33.c5 Rxc5 34.Rxe6
+        ( 34.Qxe6 Rc1+ $19 )
+        34...Rc1+ 35.Nd1
+        ( 35.Nf1 Qc7 $19 {!} )
+        35...Qf4 36.Qb2 Rb1 37.Qc3 Rc8 {Utilises the unprotected first rank.} 38.
+        Rxe4 Qxe4 {Many authors praise the high level of this positional game. The
+        score had become 4-4. The match continued in New Orleans.} 0-1
+      GAME
+
+      expect(described_class.parse_pgn(pgn)).to eq([
+        ['d4', 'd5'], ['c4', 'e6'], ['Nc3', 'Nf6'], ['Nf3', 'dxc4'],
+        ['e3', 'c5'], ['Bxc4', 'cxd4'], ['exd4', 'Be7'], ['0-0', '0-0'],
+        ['Qe2', 'Nbd7'], ['Bb3', 'Nb6'], ['Bf4', 'Nbd5'], ['Bg3', 'Qa5'],
+        ['Rac1', 'Bd7'], ['Ne5', 'Rfd8'], ['Qf3', 'Be8'], ['Rfe1', 'Rac8'],
+        ['Bh4', 'Nxc3'], ['bxc3', 'Qc7'], ['Qd3', 'Nd5'], ['Bxe7', 'Qxe7'],
+        ['Bxd5', 'Rxd5'], ['c4', 'Rdd8'], ['Re3', 'Qd6'], ['Rd1', 'f6'],
+        ['Rh3', 'h6'], ['Ng4', 'Qf4'], ['Ne3', 'Ba4'], ['Rf3', 'Qd6'],
+        ['Rd2', 'Bc6'], ['Rg3', 'f5'], ['Rg6', 'Be4'], ['Qb3', 'Kh7'],
+        ['c5', 'Rxc5'], ['Rxe6', 'Rc1+'], ['Nd1', 'Qf4'], ['Qb2', 'Rb1'],
+        ['Qc3', 'Rc8'], ['Rxe4', 'Qxe4']
       ])
     end
   end

@@ -22,3 +22,26 @@ def ask_yes_no_question(prompt,
 
   answer == 'y' || answer == 'yes'
 end
+
+class Stack
+  def initialize
+    @data = []
+  end
+
+  def <<(item)
+    @data << item
+  end
+  alias :push :<<
+
+  def pop
+    @data.pop
+  end
+
+  def peek
+    @data[-1]
+  end
+
+  def empty?
+    @data.empty?
+  end
+end
