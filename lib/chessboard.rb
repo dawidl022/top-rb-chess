@@ -113,6 +113,8 @@ class Chessboard
   end
 
   def move(notation, colour)
+    return INVALID_MOVE_MSG if notation.length < 2
+
     notation = normalise_notation(notation, colour)
 
     result = evaluate_move(notation, colour)
@@ -187,6 +189,7 @@ class Chessboard
     return promote_pawn(notation, colour) if pawn_promotion_notation?(notation)
     return move_pawn(notation, colour) if pawn_notation?(notation)
     return move_piece(notation, colour) if PIECES.keys.include?(notation[0].to_sym)
+
     INVALID_MOVE_MSG
   end
 

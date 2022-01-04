@@ -1048,6 +1048,18 @@ RSpec.describe Chessboard do
         ])
       end
     end
+
+    context 'when notation is empty' do
+      it 'returns error message' do
+        expect(board.move('', :white)).to eq("Invalid move")
+      end
+    end
+
+    context 'when notation is a single character' do
+      it 'returns error message' do
+        expect(board.move('e', :white)).to eq("Invalid move")
+      end
+    end
   end
 
   describe "#under_check?" do
